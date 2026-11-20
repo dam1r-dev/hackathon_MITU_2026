@@ -102,3 +102,18 @@ export interface MeOut {
   system_role: SystemRole;
   events: EventInfo[];
 }
+
+export interface Attendee {
+  profile: Profile;
+  system_role: SystemRole;
+}
+
+export interface MemberOut extends Attendee {
+  events: string[];
+}
+
+export interface EventStats {
+  attendees: number;
+  by_goal: { goal: Goal; count: number }[];
+  hints: { code: "scarce_supply"; scarce: Goal; plenty: Goal; scarce_count: number; plenty_count: number }[];
+}

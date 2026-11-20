@@ -56,3 +56,28 @@ export const sentMeets = {
     return next;
   },
 };
+
+/** Admin token from POST /api/admin/login. The backend keeps it in memory: sign in again after a restart. */
+export const adminSession = {
+  get(): string | null {
+    try {
+      return localStorage.getItem("adminToken");
+    } catch {
+      return null;
+    }
+  },
+  set(token: string) {
+    try {
+      localStorage.setItem("adminToken", token);
+    } catch {
+      /* ignore */
+    }
+  },
+  clear() {
+    try {
+      localStorage.removeItem("adminToken");
+    } catch {
+      /* ignore */
+    }
+  },
+};

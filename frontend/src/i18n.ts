@@ -90,6 +90,52 @@ export type Dict = {
   live: string;
   allGoals: string;
   // qr page
+  // admin
+  navAdmin: string;
+  adminTitle: string;
+  adminCode: string;
+  adminCodeHint: string;
+  signIn: string;
+  signOut: string;
+  wrongCode: string;
+  signedInAs: (role: string) => string;
+  orgNoEvents: string;
+  forbidden: string;
+  eventsTitle: string;
+  noEvents: string;
+  createEvent: string;
+  eventTitle: string;
+  eventDate: string;
+  eventVenue: string;
+  eventCodeOpt: string;
+  eventCodeHint: string;
+  codeTaken: string;
+  codeInvalid: string;
+  statusOpen: string;
+  statusClosed: string;
+  closeReg: string;
+  openReg: string;
+  del: string;
+  confirmDeleteEvent: (title: string) => string;
+  copyLink: string;
+  manage: string;
+  projector: string;
+  allEvents: string;
+  attendeesTitle: string;
+  search: string;
+  noAttendees: string;
+  noResults: string;
+  addAttendee: string;
+  existingMember: string;
+  newProfile: string;
+  pickMember: string;
+  add: string;
+  remove: string;
+  confirmRemove: (name: string) => string;
+  access: string;
+  balance: string;
+  hintScarce: (scarce: string, sc: number, plenty: string, pc: number) => string;
+  balanced: string;
   goals: Record<Goal, string>;
   goalHints: Record<Goal, string>;
 };
@@ -176,6 +222,51 @@ const en: Dict = {
   mapHint: "Fill in your profile to see your matches here.",
   live: "Live",
   allGoals: "All",
+  navAdmin: "Admin",
+  adminTitle: "Admin panel",
+  adminCode: "Admin code",
+  adminCodeHint: "Organizers: join your event with your profile, then come back here.",
+  signIn: "Sign in",
+  signOut: "Sign out",
+  wrongCode: "Wrong code.",
+  signedInAs: (role) => `Signed in as ${role}`,
+  orgNoEvents: "No events are assigned to you yet. Ask an admin to add you as an organizer.",
+  forbidden: "You do not have access to this.",
+  eventsTitle: "Events",
+  noEvents: "No events yet. Create the first one.",
+  createEvent: "Create event",
+  eventTitle: "Title",
+  eventDate: "Date",
+  eventVenue: "Venue",
+  eventCodeOpt: "Join code (optional)",
+  eventCodeHint: "4-12 Latin letters and digits. Generated if empty.",
+  codeTaken: "This code is already used by another event.",
+  codeInvalid: "Use 4-12 Latin letters and digits.",
+  statusOpen: "Open",
+  statusClosed: "Closed",
+  closeReg: "Close registration",
+  openReg: "Reopen registration",
+  del: "Delete",
+  confirmDeleteEvent: (title) => `Delete the event "${title}"? People stay in the system.`,
+  copyLink: "Copy join link",
+  manage: "Manage",
+  projector: "Projector",
+  allEvents: "All events",
+  attendeesTitle: "Attendees",
+  search: "Search by name, role or stack",
+  noAttendees: "No attendees yet. Show the QR code on the projector.",
+  noResults: "Nobody matches the search.",
+  addAttendee: "Add attendee",
+  existingMember: "Existing member",
+  newProfile: "New profile",
+  pickMember: "Choose a member",
+  add: "Add",
+  remove: "Remove",
+  confirmRemove: (name) => `Remove ${name} from this event?`,
+  access: "Access",
+  balance: "Goal balance",
+  hintScarce: (scarce, sc, plenty, pc) => `Only ${sc} "${scarce}" for ${pc} "${plenty}". Invite more people with the goal "${scarce}".`,
+  balanced: "Goals are balanced. Everyone has someone to meet.",
   goals: {
     find_job: "Find a job",
     hire: "Hire",
@@ -281,6 +372,51 @@ const ru: Dict = {
   mapHint: "Заполните анкету, чтобы увидеть здесь свои совпадения.",
   live: "Онлайн",
   allGoals: "Все",
+  navAdmin: "Админ",
+  adminTitle: "Панель администратора",
+  adminCode: "Код администратора",
+  adminCodeHint: "Организаторы: присоединитесь к мероприятию со своей анкетой и вернитесь сюда.",
+  signIn: "Войти",
+  signOut: "Выйти",
+  wrongCode: "Неверный код.",
+  signedInAs: (role) => `Вы вошли как: ${role}`,
+  orgNoEvents: "За вами пока не закреплено мероприятий. Попросите админа назначить вас организатором.",
+  forbidden: "У вас нет доступа к этому.",
+  eventsTitle: "Мероприятия",
+  noEvents: "Мероприятий пока нет. Создайте первое.",
+  createEvent: "Создать мероприятие",
+  eventTitle: "Название",
+  eventDate: "Дата",
+  eventVenue: "Место",
+  eventCodeOpt: "Код для входа (необязательно)",
+  eventCodeHint: "4-12 латинских букв и цифр. Если пусто, создадим сами.",
+  codeTaken: "Этот код уже занят другим мероприятием.",
+  codeInvalid: "Используйте 4-12 латинских букв и цифр.",
+  statusOpen: "Открыто",
+  statusClosed: "Закрыто",
+  closeReg: "Закрыть регистрацию",
+  openReg: "Открыть регистрацию",
+  del: "Удалить",
+  confirmDeleteEvent: (title) => `Удалить мероприятие «${title}»? Участники останутся в системе.`,
+  copyLink: "Скопировать ссылку",
+  manage: "Управлять",
+  projector: "Проектор",
+  allEvents: "Все мероприятия",
+  attendeesTitle: "Участники",
+  search: "Поиск по имени, роли или стеку",
+  noAttendees: "Участников пока нет. Покажите QR-код на проекторе.",
+  noResults: "Никто не подходит под поиск.",
+  addAttendee: "Добавить участника",
+  existingMember: "Существующий",
+  newProfile: "Новая анкета",
+  pickMember: "Выберите участника",
+  add: "Добавить",
+  remove: "Убрать",
+  confirmRemove: (name) => `Убрать ${name} из этого мероприятия?`,
+  access: "Доступ",
+  balance: "Баланс целей",
+  hintScarce: (scarce, sc, plenty, pc) => `Всего ${sc} «${scarce}» на ${pc} «${plenty}». Пригласите больше людей с целью «${scarce}».`,
+  balanced: "Цели сбалансированы: каждому есть с кем познакомиться.",
   goals: {
     find_job: "Найти работу",
     hire: "Нанять",
@@ -381,6 +517,51 @@ const kk: Dict = {
   mapHint: "Сәйкестіктерді осында көру үшін сауалнаманы толтырыңыз.",
   live: "Тікелей",
   allGoals: "Барлығы",
+  navAdmin: "Әкімші",
+  adminTitle: "Әкімші панелі",
+  adminCode: "Әкімші коды",
+  adminCodeHint: "Ұйымдастырушылар: іс-шараға өз сауалнамаңызбен қосылып, осында оралыңыз.",
+  signIn: "Кіру",
+  signOut: "Шығу",
+  wrongCode: "Код қате.",
+  signedInAs: (role) => `Сіз кірдіңіз: ${role}`,
+  orgNoEvents: "Сізге әлі іс-шара бекітілмеген. Әкімшіден сізді ұйымдастырушы етуді сұраңыз.",
+  forbidden: "Сізде бұған рұқсат жоқ.",
+  eventsTitle: "Іс-шаралар",
+  noEvents: "Әзірге іс-шара жоқ. Біріншісін құрыңыз.",
+  createEvent: "Іс-шара құру",
+  eventTitle: "Атауы",
+  eventDate: "Күні",
+  eventVenue: "Өтетін орны",
+  eventCodeOpt: "Кіру коды (міндетті емес)",
+  eventCodeHint: "4-12 латын әрпі мен сан. Бос болса, өзіміз жасаймыз.",
+  codeTaken: "Бұл код басқа іс-шарада қолданылған.",
+  codeInvalid: "4-12 латын әрпі мен санды қолданыңыз.",
+  statusOpen: "Ашық",
+  statusClosed: "Жабық",
+  closeReg: "Тіркеуді жабу",
+  openReg: "Тіркеуді ашу",
+  del: "Жою",
+  confirmDeleteEvent: (title) => `«${title}» іс-шарасын жою керек пе? Қатысушылар жүйеде қалады.`,
+  copyLink: "Сілтемені көшіру",
+  manage: "Басқару",
+  projector: "Проектор",
+  allEvents: "Барлық іс-шаралар",
+  attendeesTitle: "Қатысушылар",
+  search: "Аты, рөлі немесе стегі бойынша іздеу",
+  noAttendees: "Әзірге қатысушы жоқ. QR-кодты проекторда көрсетіңіз.",
+  noResults: "Іздеуге ешкім сәйкес келмеді.",
+  addAttendee: "Қатысушы қосу",
+  existingMember: "Бар қатысушы",
+  newProfile: "Жаңа сауалнама",
+  pickMember: "Қатысушыны таңдаңыз",
+  add: "Қосу",
+  remove: "Шығару",
+  confirmRemove: (name) => `${name} осы іс-шарадан шығарылсын ба?`,
+  access: "Рұқсат",
+  balance: "Мақсаттар теңгерімі",
+  hintScarce: (scarce, sc, plenty, pc) => `${pc} «${plenty}» үшін тек ${sc} «${scarce}». «${scarce}» мақсаты бар адамдарды көбірек шақырыңыз.`,
+  balanced: "Мақсаттар теңгерімде: әркімнің танысатын адамы бар.",
   goals: {
     find_job: "Жұмыс табу",
     hire: "Жұмысқа алу",

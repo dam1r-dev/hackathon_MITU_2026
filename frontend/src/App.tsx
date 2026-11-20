@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Segmented, ThemeToggle } from "./components/ui";
 import { dict, LANGS } from "./i18n";
+import { AdminPage } from "./pages/AdminPage";
 import { DesignPage } from "./pages/DesignPage";
 import { EventJoinPage } from "./pages/EventJoinPage";
 import { EventPage } from "./pages/EventPage";
@@ -33,6 +34,7 @@ export default function App() {
       me: t.meTitle,
       map: t.mapTitle,
       design: "Design system",
+      admin: t.adminTitle,
     };
     document.title = `${titles[route.name]} · Meetup Matchmaker`;
   }, [route, t]);
@@ -80,11 +82,13 @@ export default function App() {
         {route.name === "me" && <ProfilePage t={t} lang={lang} setLang={setLang} theme={theme} setTheme={setTheme} go={go} />}
         {route.name === "map" && <MapPage t={t} matcher={matcher} onFind={() => go({ name: "find" })} />}
         {route.name === "design" && <DesignPage t={t} />}
+        {route.name === "admin" && <AdminPage key={route.code ?? "list"} t={t} eventId={route.code} go={go} />}
       </main>
 
       {!projector && (
         <footer className="footer">
-          AI in Engineering Hackathon 2026 · <a href={href({ name: "screen" })}>{t.navScreen}</a> · <a href="#/design">Design system</a>
+          AI in Engineering Hackathon 2026 · <a href={href({ name: "screen" })}>{t.navScreen}</a> · <a href={href({ name: "admin" })}>{t.navAdmin}</a> ·{" "}
+          <a href="#/design">Design system</a>
         </footer>
       )}
     </>

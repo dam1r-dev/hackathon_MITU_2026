@@ -1,6 +1,10 @@
-import { session } from "./session";
+import { adminSession, session } from "./session";
 import type {
+  Attendee,
   EventInfo,
+  EventStats,
+  MemberOut,
+  SystemRole,
   GraphResponse,
   JoinResponse,
   Lang,
@@ -40,12 +44,19 @@ function headers(): HeadersInit {
   const h: Record<string, string> = { "Content-Type": "application/json" };
   const token = session.get()?.token;
   if (token) h["X-Member-Token"] = token;
+  const admin = adminSession.get();
+  if (admin) h["X-Admin-Token"] = admin;
   return h;
 }
 
 const get = <T>(url: string) => fetch(url, { headers: headers() }).then((r) => json<T>(r));
 const post = <T>(url: string, body: unknown) =>
   fetch(url, { method: "POST", headers: headers(), body: JSON.stringify(body) }).then((r) => json<T>(r));
+
+const send = <T>(method: string, url: string, body?: unknown) =>
+  fetch(url, { method, headers: headers(), body: body === undefined ? undefined : JSON.stringify(body) }).then((r) =>
+    r.status === 204 ? (undefined as T) : json<T>(r),
+  );
 
 const ev = (code: string) => `/api/events/by-code/${encodeURIComponent(code)}`;
 
@@ -74,4 +85,18 @@ export const api = {
   meet: (code: string, target_id: string) => post<MeetResponse>(`${ev(code)}/meet`, { target_id }),
   mutual: (code: string) => get<MutualOut[]>(`${ev(code)}/mutual`),
   me: () => get<MeOut>("/api/me"),
+
+  // Admin / organizer (X-Admin-Token or an organizer's X-Member-Token)
+  adminLogin: (code: string) => post<{ token: string }>("/api/admin/login", { code }),
+  events: () => get<EventInfo[]>("/api/events"),
+  createEvent: (body: { title: string; date: string; venue: string; code?: string }) => post<EventInfo>("/api/events", body),
+  patchEvent: (id: string, body: Partial<Pick<EventInfo, "title" | "date" | "venue" | "status">>) =>
+    send<EventInfo>("PATCH", `/api/events/${id}`, body),
+  deleteEvent: (id: string) => send<void>("DELETE", `/api/events/${id}`),
+  attendees: (id: string) => get<Attendee[]>(`/api/events/${id}/attendees`),
+  addAttendee: (id: string, body: { member_id: string } | { profile: ProfileIn }) => post<Attendee>(`/api/events/${id}/attendees`, body),
+  removeAttendee: (id: string, memberId: string) => send<void>("DELETE", `/api/events/${id}/attendees/${memberId}`),
+  stats: (id: string) => get<EventStats>(`/api/events/${id}/stats`),
+  members: () => get<MemberOut[]>("/api/members"),
+  setRole: (memberId: string, role: SystemRole) => send<Attendee>("PATCH", `/api/members/${memberId}/role`, { role }),
 };

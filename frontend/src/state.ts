@@ -10,15 +10,18 @@ import type { Lang, Match, ProfileIn } from "./types";
  *   #/e/<code>      my top 5 inside an event
  *   #/screen/<code> projector: big QR, live counter, room map   (#/qr = last event or DEMO)
  *   #/me            my profile
+ *   #/admin         admin / organizer: events      #/admin/<event id>: one event
  *   #/map, #/design
  */
-export type RouteName = "find" | "join" | "event-join" | "event" | "screen" | "me" | "map" | "design";
+export type RouteName = "find" | "join" | "event-join" | "event" | "screen" | "me" | "map" | "design" | "admin";
 export type Route = { name: RouteName; code?: string };
 
 function parse(): Route {
   const [head = "", arg] = window.location.hash.replace(/^#\/?/, "").split("?")[0].split("/");
   const code = arg ? decodeURIComponent(arg).toUpperCase() : undefined;
   switch (head) {
+    case "admin":
+      return { name: "admin", code: arg ? decodeURIComponent(arg) : undefined }; // event id, keep case
     case "join":
       return code ? { name: "event-join", code } : { name: "join" };
     case "e":
@@ -45,6 +48,8 @@ export const href = (r: Route): string => {
       return `#/e/${r.code}`;
     case "screen":
       return `#/screen/${r.code ?? ""}`;
+    case "admin":
+      return r.code ? `#/admin/${r.code}` : "#/admin";
     default:
       return `#/${r.name}`;
   }
