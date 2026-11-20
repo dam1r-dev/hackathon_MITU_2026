@@ -1,0 +1,12 @@
+[
+  {"id":"p_001","name":"Aidos Nurlanov","role":"Backend developer","stack":["Python","FastAPI","PostgreSQL"],"experience_years":3,"interests":["LLM agents","fintech"],"about":"Looking for a team that ships fast.","goal":"find_job","lang":"ru"},
+  {"id":"p_002","name":"Dana Sadykova","role":"Engineering manager","stack":["Python","Go","Kubernetes"],"experience_years":9,"interests":["LLM agents","fintech","hiring"],"about":"Hiring two backend engineers for a payments team.","goal":"hire","lang":"ru"},
+  {"id":"p_003","name":"Timur Akhmetov","role":"Senior ML engineer","stack":["Python","PyTorch","MLOps"],"experience_years":8,"interests":["LLM agents","education"],"about":"Happy to mentor juniors in ML.","goal":"be_mentor","lang":"en"},
+  {"id":"p_004","name":"Aruzhan Bekova","role":"Junior data scientist","stack":["Python","pandas","SQL"],"experience_years":1,"interests":["LLM agents","healthcare"],"about":"Want a mentor to grow in ML.","goal":"find_mentor","lang":"kk"},
+  {"id":"p_005","name":"Nurlan Omarov","role":"Product designer","stack":["Figma","React"],"experience_years":5,"interests":["edtech","fintech"],"about":"Looking for a technical co-founder.","goal":"find_cofounder","lang":"ru"},
+  {"id":"p_006","name":"Madina Kasymova","role":"Full-stack developer","stack":["TypeScript","Next.js","Node.js"],"experience_years":4,"interests":["edtech","fintech"],"about":"Want to build a startup in edtech.","goal":"find_cofounder","lang":"en"},
+  {"id":"p_007","name":"Yerlan Tulegenov","role":"DevOps engineer","stack":["Kubernetes","Terraform","Go"],"experience_years":6,"interests":["cloud","fintech"],"about":"Open to swap experience on infra.","goal":"exchange_experience","lang":"ru"},
+  {"id":"p_008","name":"Sabina Iskakova","role":"Backend developer","stack":["Go","gRPC","Kubernetes"],"experience_years":5,"interests":["cloud","fintech"],"about":"Curious about platform engineering.","goal":"exchange_experience","lang":"en"},
+  {"id":"p_009","name":"Daniyar Zhumabek","role":"CTO","stack":["Python","FastAPI","AWS"],"experience_years":12,"interests":["LLM agents","hiring"],"about":"Hiring a junior backend developer.","goal":"hire","lang":"ru"},
+  {"id":"p_010","name":"Alina Sultanova","role":"Frontend developer","stack":["React","TypeScript","Figma"],"experience_years":2,"interests":["edtech","design systems"],"about":"Looking for my first job abroad.","goal":"find_job","lang":"en"}
+]
