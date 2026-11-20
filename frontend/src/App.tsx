@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "./api";
-import { dict } from "./i18n";
-import { GOALS, type Lang, type Match, type ProfileIn } from "./types";
+import { MatchCard } from "./components/MatchCard";
+import { ProfileForm } from "./components/ProfileForm";
+import { dict, LANGS } from "./i18n";
+import type { Lang, Match, ProfileIn } from "./types";
 
 const empty: ProfileIn = {
   name: "",
@@ -11,112 +13,111 @@ const empty: ProfileIn = {
   interests: [],
   about: "",
   goal: "find_job",
-  lang: "en",
+  lang: "ru",
 };
 
-const split = (s: string) => s.split(",").map((x) => x.trim()).filter(Boolean);
+function loadLang(): Lang {
+  try {
+    const v = localStorage.getItem("lang");
+    if (v === "kk" || v === "ru" || v === "en") return v;
+  } catch {
+    /* storage unavailable */
+  }
+  return "ru";
+}
 
 export default function App() {
-  const [lang] = useState<Lang>("en");
+  const [lang, setLang] = useState<Lang>(loadLang);
   const t = dict[lang];
-  const [form, setForm] = useState<ProfileIn>(empty);
-  const [stackText, setStackText] = useState("");
-  const [interestsText, setInterestsText] = useState("");
+  const [form, setForm] = useState<ProfileIn>({ ...empty, lang: loadLang() });
   const [matches, setMatches] = useState<Match[] | null>(null);
   const [tookMs, setTookMs] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(false);
+  // Id of the viewer in the backend. Created lazily on the first feedback, because
+  // /feedback needs a stored profile. Reset when the profile is edited.
+  const [viewerId, setViewerId] = useState<string | null>(null);
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
+  useEffect(() => {
+    document.documentElement.lang = lang;
     try {
-      const res = await api.recommend(
-        { ...form, stack: split(stackText), interests: split(interestsText), lang },
-        lang,
-      );
+      localStorage.setItem("lang", lang);
+    } catch {
+      /* storage unavailable */
+    }
+  }, [lang]);
+
+  async function submit() {
+    setLoading(true);
+    setError(false);
+    setViewerId(null);
+    try {
+      const res = await api.recommend({ ...form, lang }, lang);
       setMatches(res.matches);
       setTookMs(res.took_ms);
-    } catch (err) {
-      setError(String(err));
+      requestAnimationFrame(() => document.getElementById("results")?.scrollIntoView({ behavior: "smooth" }));
+    } catch {
+      setError(true);
     } finally {
       setLoading(false);
     }
   }
 
+  async function feedback(targetId: string, verdict: "met" | "not_fit") {
+    setBusy(true);
+    setError(false);
+    try {
+      let id = viewerId;
+      if (!id) {
+        id = (await api.addProfile({ ...form, lang })).id;
+        setViewerId(id);
+      }
+      const res = await api.feedback(id, targetId, verdict);
+      setMatches(res.matches);
+      setTookMs(res.took_ms);
+    } catch {
+      setError(true);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="page">
-      <h1>{t.title}</h1>
-      <p className="sub">{t.subtitle}</p>
+      <nav className="topbar">
+        <span className="brand">Meetup Matchmaker</span>
+        <div className="langs" role="group" aria-label="Language">
+          {LANGS.map((l) => (
+            <button key={l.code} type="button" data-active={lang === l.code} onClick={() => setLang(l.code)}>
+              {l.label}
+            </button>
+          ))}
+        </div>
+      </nav>
 
-      <form onSubmit={submit}>
-        <label>
-          {t.name}
-          <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-        </label>
-        <label>
-          {t.role}
-          <input required value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} />
-        </label>
-        <label>
-          {t.stack} ({t.stackHint})
-          <input value={stackText} onChange={(e) => setStackText(e.target.value)} />
-        </label>
-        <label>
-          {t.experience}
-          <input
-            type="number"
-            min={0}
-            value={form.experience_years}
-            onChange={(e) => setForm({ ...form, experience_years: Number(e.target.value) })}
-          />
-        </label>
-        <label>
-          {t.interests} ({t.stackHint})
-          <input value={interestsText} onChange={(e) => setInterestsText(e.target.value)} />
-        </label>
-        <label>
-          {t.about}
-          <textarea rows={3} value={form.about} onChange={(e) => setForm({ ...form, about: e.target.value })} />
-        </label>
-        <label>
-          {t.goal}
-          <select value={form.goal} onChange={(e) => setForm({ ...form, goal: e.target.value as ProfileIn["goal"] })}>
-            {GOALS.map((g) => (
-              <option key={g} value={g}>
-                {t.goals[g]}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button disabled={loading}>{loading ? t.loading : t.submit}</button>
-      </form>
+      <header className="hero">
+        <h1>{t.title}</h1>
+        <p className="sub">{t.subtitle}</p>
+      </header>
 
-      {error && <p className="error">{error}</p>}
+      <ProfileForm t={t} value={form} onChange={(p) => { setForm(p); setViewerId(null); }} onSubmit={submit} loading={loading} />
+
+      {error && <p className="error">{t.error}</p>}
 
       {matches && (
-        <section className="results">
-          <h2>
-            {t.results} <span className="muted">{t.tookMs(tookMs)}</span>
-          </h2>
-          {matches.map((m) => (
-            <article className="card" key={m.profile.id}>
-              <h3>{m.profile.name}</h3>
-              <div className="muted">
-                {m.profile.role} · {t.goals[m.profile.goal]} · {Math.round(m.score * 100)}%
-              </div>
-              <div className="tags">
-                {m.shared_tags.map((tag) => (
-                  <span className="tag" key={tag}>{tag}</span>
-                ))}
-              </div>
-              <p>{m.explanation}</p>
-              <p className="muted">{t.youGive}: {m.you_give}</p>
-              <p className="muted">{t.theyGive}: {m.they_give}</p>
-              <p className="muted">{t.icebreaker}: {m.icebreaker}</p>
-            </article>
+        <section id="results" className="results">
+          <div className="results-head">
+            <h2>{t.results}</h2>
+            <span className="muted">{t.tookMs(tookMs)}</span>
+          </div>
+          {matches.length === 0 && <p className="muted">{t.empty}</p>}
+          {matches.map((m, i) => (
+            <MatchCard key={m.profile.id} t={t} m={m} rank={i} busy={busy} onFeedback={(v) => feedback(m.profile.id, v)} />
           ))}
+          <button type="button" className="link" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+            ↑ {t.edit}
+          </button>
         </section>
       )}
     </div>
