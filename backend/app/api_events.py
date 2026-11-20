@@ -121,8 +121,8 @@ def event_out(e: dict) -> Event:
     return Event(
         **e,
         attendee_count=count,
-        join_path=f"/join/{e['code']}",
-        join_url=f"{_public_url()}/join/{e['code']}",
+        join_path=f"/#/join/{e['code']}",
+        join_url=f"{_public_url()}/#/join/{e['code']}",
     )
 
 

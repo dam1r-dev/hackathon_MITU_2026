@@ -91,11 +91,11 @@ Errors: `401` no or unknown token, `403` signed in but not allowed. Body is `{"d
 ```json
 Event  { "id": "e_1a2b3c4d", "code": "YYZGW3", "title": "Qazaq IT Meetup", "date": "2026-12-01", "venue": "Almaty",
          "status": "open|closed", "organizer_ids": ["m_..."], "created_at": "ISO", "attendee_count": 42,
-         "join_path": "/join/YYZGW3", "join_url": "http://<PUBLIC_URL>/join/YYZGW3" }
+         "join_path": "/#/join/YYZGW3", "join_url": "http://<PUBLIC_URL>/#/join/YYZGW3" }
 SystemRole = "admin" | "organizer" | "member"
 Attendee { "profile": Profile, "system_role": SystemRole }
 ```
-The frontend must serve the page `/join/<code>`: it calls `GET /api/events/by-code/<code>`, then shows the 60-second profile form, then `POST .../join`.
+The frontend uses hash routing, so the join page is the route `#/join/<code>` (full link `http://<host>/#/join/<code>`). It calls `GET /api/events/by-code/<code>`, then shows the 60-second profile form, then `POST .../join`.
 `join_url` is built from the `PUBLIC_URL` env var. Set it to the machine's LAN address so phones can open the QR code.
 
 ### Public (no token)

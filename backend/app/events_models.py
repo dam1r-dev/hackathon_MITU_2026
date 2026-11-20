@@ -35,7 +35,7 @@ class Event(BaseModel):
     organizer_ids: list[str]
     created_at: str
     attendee_count: int
-    join_path: str  # "/join/<code>", the page Shakhruz's frontend serves
+    join_path: str  # "/#/join/<code>", the hash route the frontend serves
     join_url: str  # PUBLIC_URL + join_path, what the QR code encodes
 
 
