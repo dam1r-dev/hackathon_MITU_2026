@@ -52,6 +52,8 @@ class Match(BaseModel):
 class RecommendRequest(BaseModel):
     profile: ProfileIn
     lang: Lang = "ru"
+    # Set when the viewer is already saved via POST /api/profiles: hides self, applies feedback.
+    viewer_id: str | None = None
 
 
 class RecommendResponse(BaseModel):

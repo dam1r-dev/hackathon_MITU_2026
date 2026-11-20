@@ -39,7 +39,9 @@ Reciprocity (who should be shown to whom):
 ## API (base `/api`)
 
 ### POST /api/recommend
-Request: `{ "profile": Profile (without id), "lang": "kk|ru|en" }`
+Request: `{ "profile": Profile (without id), "lang": "kk|ru|en", "viewer_id": "p_101" }`
+
+`viewer_id` is optional. Pass the id returned by `POST /api/profiles` so the viewer never sees themselves and feedback (met / not a fit) is applied.
 
 Response:
 ```json
@@ -66,14 +68,31 @@ Add a profile (used by the QR flow). Body: Profile without id. Returns `{ "id": 
 ### GET /api/graph
 Data for the room map: `{ "nodes": [{ "id", "name", "goal", "cluster", "x", "y" }], "edges": [{ "from", "to", "score" }] }`.
 Edges are optional, only for the current viewer if `?viewer=<id>` is passed.
+`x`, `y` are in `[0.05, 0.95]` (2D projection of the profile embeddings, similar people sit close). `cluster` is an interest cluster (0..5), not the goal.
 
 ### POST /api/feedback
 Body: `{ "viewer_id": "p_101", "target_id": "p_007", "verdict": "met|not_fit" }`.
 Returns a fresh `matches` array (same shape as /recommend) with the new ranking.
 
+## Precomputed explanations (optional, `data/explanations.json`)
+
+By default the backend builds `explanation`, `you_give`, `they_give` and `icebreaker` from templates (instant, kk/ru/en). For pairs where a better LLM text exists, put it here; it overrides the template for that field. Key is `"<viewer_id>|<target_id>"`:
+
+```json
+{
+  "p_001|p_009": {
+    "en": { "explanation": "...", "you_give": "...", "they_give": "...", "icebreaker": "..." },
+    "ru": { "explanation": "..." }
+  }
+}
+```
+Any field or language may be missing. The file is re-read automatically when it changes.
+
 ## Scoring rule (two-sided)
 
 `score(A,B) = sqrt( fit(A->B) * fit(B->A) )`
 
-- `fit(A->B)` is 0 if B's goal is not in the reciprocity row for A, else semantic closeness of A's need to B's offer (embeddings), adjusted by experience gap for mentor pairs.
+- `fit(A->B)` is 0 if B's goal is not in the reciprocity row for A. Otherwise `(0.05 + 0.95 * base) * goal_factor`, where `base = 0.7 * embedding_similarity + 0.3 * tag_overlap`.
+- `goal_factor`: mentor pairs need the mentor to have more experience (gap 3+ years gives 1.0, no gap gives 0.35); co-founders score higher with different stacks; other goals use 1.
+- Embeddings: multilingual MiniLM through fastembed, so kk/ru/en profiles are comparable. Falls back to hashing vectors offline (same language only).
 - This is the core idea: complementary, not similar.
