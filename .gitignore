@@ -11,3 +11,5 @@ venv/
 .cache/
 *.log
 .DS_Store
+
+.state/

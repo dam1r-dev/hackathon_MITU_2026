@@ -54,6 +54,8 @@ class RecommendRequest(BaseModel):
     lang: Lang = "ru"
     # Set when the viewer is already saved via POST /api/profiles: hides self, applies feedback.
     viewer_id: str | None = None
+    # Set to limit candidates to the attendees of one event (its join code).
+    event_code: str | None = None
 
 
 class RecommendResponse(BaseModel):
@@ -65,6 +67,7 @@ class FeedbackRequest(BaseModel):
     viewer_id: str
     target_id: str
     verdict: Literal["met", "not_fit"]
+    event_code: str | None = None
 
 
 class GraphNode(BaseModel):

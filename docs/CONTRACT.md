@@ -74,6 +74,74 @@ Edges are optional, only for the current viewer if `?viewer=<id>` is passed.
 Body: `{ "viewer_id": "p_101", "target_id": "p_007", "verdict": "met|not_fit" }`.
 Returns a fresh `matches` array (same shape as /recommend) with the new ranking.
 
+## Events, members, roles and access
+
+Product flow: an admin creates an event, people scan its QR code, fill in the profile and see their top 5 **among that event's attendees**.
+
+### Access (kept simple on purpose)
+| Who | How | Header |
+|---|---|---|
+| Admin | `POST /api/admin/login {"code": ADMIN_CODE}` returns `{"token"}`. Admin tokens live in memory, sign in again after a backend restart. A member with role `admin` is an admin too. | `X-Admin-Token` |
+| Member | Joining an event returns `token`. It survives restarts. Keep it in `localStorage`. | `X-Member-Token` |
+| Organizer | A member with role `organizer` who is listed in the event's `organizer_ids`. Manages only that event. | `X-Member-Token` |
+
+Errors: `401` no or unknown token, `403` signed in but not allowed. Body is `{"detail": "<code>"}`, for example `sign_in_required`, `forbidden`, `event_closed`, `code_taken`, `not_in_event`.
+
+### Types
+```json
+Event  { "id": "e_1a2b3c4d", "code": "YYZGW3", "title": "Qazaq IT Meetup", "date": "2026-12-01", "venue": "Almaty",
+         "status": "open|closed", "organizer_ids": ["m_..."], "created_at": "ISO", "attendee_count": 42,
+         "join_path": "/join/YYZGW3", "join_url": "http://<PUBLIC_URL>/join/YYZGW3" }
+SystemRole = "admin" | "organizer" | "member"
+Attendee { "profile": Profile, "system_role": SystemRole }
+```
+The frontend must serve the page `/join/<code>`: it calls `GET /api/events/by-code/<code>`, then shows the 60-second profile form, then `POST .../join`.
+`join_url` is built from the `PUBLIC_URL` env var. Set it to the machine's LAN address so phones can open the QR code.
+
+### Public (no token)
+| Method and path | Purpose |
+|---|---|
+| `GET /api/events/by-code/{code}` | Event info for the landing page |
+| `GET /api/events/by-code/{code}/qr.svg` | QR code image (SVG) of `join_url` |
+| `GET /api/events/by-code/{code}/graph` | Room map for the projector. Same shape as `/api/graph`, only this event's attendees, `name` shortened to initials |
+| `POST /api/events/by-code/{code}/join` | Join. Body `{ "profile": ProfileIn, "contact": "@handle", "lang": "ru" }`. Returns `{ "member_id", "token", "event", "took_ms", "matches" }`. With a valid `X-Member-Token` and no `profile` it adds the existing member (idempotent). |
+
+### Member (X-Member-Token)
+| Method and path | Purpose |
+|---|---|
+| `GET /api/events/by-code/{code}/matches?lang=ru` | Top 5 among this event's attendees. Call again to refresh as people arrive |
+| `POST /api/events/by-code/{code}/meet` `{ "target_id" }` | "Want to meet". Returns `{ "mutual": bool, "contact": "@handle" or null }`. Contact is shown only when both sides pressed it |
+| `GET /api/events/by-code/{code}/mutual` | Everyone with mutual interest, with contacts |
+| `GET /api/me` | Own profile, role, events |
+| `POST /api/feedback` | Same as before, add `"event_code"` to stay inside the event |
+
+`contact` is never part of `Profile` and never appears in matches, lists or the map.
+
+### Admin and organizer
+Organizer rights apply only to events where the member is listed in `organizer_ids`.
+
+| Method and path | Who | Purpose |
+|---|---|---|
+| `GET /api/events` | admin, organizer (own events) | List events, newest first |
+| `POST /api/events` | admin | Create. Body `{ "title", "date", "venue", "code"?, "organizer_ids"? }`. Code is generated when omitted (6 letters and digits) |
+| `PATCH /api/events/{event_id}` | admin, organizer | Change `title`, `date`, `venue`, `status`. `organizer_ids` only by admin |
+| `DELETE /api/events/{event_id}` | admin | Delete the event (members stay) |
+| `GET /api/events/{event_id}/attendees` | admin, organizer | `Attendee[]` |
+| `POST /api/events/{event_id}/attendees` | admin, organizer | Add `{ "member_id" }` or create `{ "profile": ProfileIn }` |
+| `DELETE /api/events/{event_id}/attendees/{member_id}` | admin, organizer | Remove from the event |
+| `GET /api/events/{event_id}/stats` | admin, organizer | `{ "attendees", "by_goal": [{goal, count}], "hints": [{code, scarce, plenty, scarce_count, plenty_count}] }`. A hint `scarce_supply` means for example 3 hirers for 40 job seekers |
+| `GET /api/members` | admin | All members with `events` (ids) |
+| `PATCH /api/members/{member_id}/role` `{ "role" }` | admin | Set `admin`, `organizer` or `member` |
+| `DELETE /api/members/{member_id}` | admin | Remove the member everywhere |
+
+### Seed events (optional, `data/events.json`)
+Read once, on the first start with no saved state. A list (or `{ "events": [...] }`) of
+`{ "title", "date"?, "venue"?, "code"?, "status"?, "attendees": ["p_001", ...] or "all" }`.
+Without the file the backend creates one event with code `DEMO` containing every profile.
+
+### Persistence
+Events, attendees, roles, tokens, contacts, feedback and runtime profiles are saved to `.state/state.json` (git-ignored, override with `STATE_FILE`). Delete the file to reset.
+
 ## Precomputed explanations (optional, `data/explanations.json`)
 
 By default the backend builds `explanation`, `you_give`, `they_give` and `icebreaker` from templates (instant, kk/ru/en). For pairs where a better LLM text exists, put it here; it overrides the template for that field. Key is `"<viewer_id>|<target_id>"`:

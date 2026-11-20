@@ -11,12 +11,16 @@ import logging
 import os
 import re
 import zlib
+from pathlib import Path
 
 import numpy as np
 
 log = logging.getLogger("embeddings")
 
 MODEL = os.getenv("EMBEDDING_MODEL", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+CACHE_DIR = os.getenv(
+    "FASTEMBED_CACHE_PATH", str(Path(__file__).resolve().parents[2] / ".cache" / "fastembed")
+)
 HASH_DIM = 512
 _WORD = re.compile(r"\w+", re.UNICODE)
 
@@ -36,7 +40,7 @@ class Embedder:
             try:
                 from fastembed import TextEmbedding
 
-                self._model = TextEmbedding(MODEL)
+                self._model = TextEmbedding(MODEL, cache_dir=CACHE_DIR)
                 self.kind = f"fastembed:{MODEL}"
             except Exception as exc:  # no network, no cache, missing package
                 log.warning("fastembed unavailable (%s). Falling back to hashing vectors.", exc)

@@ -91,6 +91,7 @@ class Index:
         self._layout: tuple[int, np.ndarray, np.ndarray] | None = None
         self._expl: dict = {}
         self._expl_mtime: float | None = None
+        self.on_feedback = None  # optional callback, used to persist feedback
 
     # ---- data
     def add_many(self, new: list[Profile]) -> None:
@@ -103,6 +104,19 @@ class Index:
 
     def get(self, pid: str) -> Profile | None:
         return next((p for p in self.profiles if p.id == pid), None)
+
+    def remove(self, pid: str) -> bool:
+        i = next((k for k, p in enumerate(self.profiles) if p.id == pid), None)
+        if i is None:
+            return False
+        del self.profiles[i]
+        self.mat = np.delete(self.mat, i, axis=0)
+        self.feedback.pop(pid, None)
+        for fb in self.feedback.values():
+            fb["met"].discard(pid)
+            fb["not_fit"].discard(pid)
+        self._layout = None
+        return True
 
     # ---- optional precomputed text (data/explanations.json)
     def _explanations(self) -> dict:
@@ -130,6 +144,8 @@ class Index:
     def record_feedback(self, viewer_id: str, target_id: str, verdict: str) -> None:
         fb = self.feedback.setdefault(viewer_id, {"met": set(), "not_fit": set()})
         fb["met" if verdict == "met" else "not_fit"].add(target_id)
+        if self.on_feedback:
+            self.on_feedback()
 
     def _feedback_factor(self, viewer_id: str | None, idx: int) -> float:
         """0 for people already met or rejected, a soft penalty for people similar to rejected ones."""
@@ -174,8 +190,13 @@ class Index:
 
     # ---- main entry
     def recommend(
-        self, viewer: ProfileIn, lang: str = "ru", viewer_id: str | None = None
+        self,
+        viewer: ProfileIn,
+        lang: str = "ru",
+        viewer_id: str | None = None,
+        allowed_ids: set[str] | None = None,
     ) -> tuple[int, list[Match]]:
+        """Top matches for `viewer`. `allowed_ids` limits candidates (for example one event's attendees)."""
         start = time.perf_counter()
         if not self.profiles:
             return 0, []
@@ -185,6 +206,8 @@ class Index:
         scored: list[tuple[float, int]] = []
         for i, p in enumerate(self.profiles):
             if viewer_id and p.id == viewer_id:
+                continue
+            if allowed_ids is not None and p.id not in allowed_ids:
                 continue
             s = score(vs, _subject(p, self.mat[i]))
             s *= self._feedback_factor(viewer_id, i)
