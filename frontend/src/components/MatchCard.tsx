@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Dict } from "../i18n";
 import type { Match } from "../types";
+import { Avatar, Button, GoalBadge, ScoreRing } from "./ui";
 
 type Props = {
   t: Dict;
@@ -10,16 +11,8 @@ type Props = {
   onFeedback: (verdict: "met" | "not_fit") => void;
 };
 
-const initials = (name: string) =>
-  name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? "")
-    .join("");
-
 export function MatchCard({ t, m, rank, busy, onFeedback }: Props) {
   const [copied, setCopied] = useState(false);
-  const pct = Math.round(m.score * 100);
   const p = m.profile;
 
   async function copy() {
@@ -28,37 +21,33 @@ export function MatchCard({ t, m, rank, busy, onFeedback }: Props) {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      /* clipboard blocked: ignore */
+      /* clipboard blocked (e.g. plain http on a phone): ignore */
     }
   }
 
   return (
-    <article className="card" style={{ animationDelay: `${rank * 60}ms` }}>
-      <header className="card-head">
-        <div className={`avatar goal-${p.goal}`} aria-hidden>
-          {initials(p.name)}
-        </div>
+    <article className="card match" style={{ animationDelay: `${rank * 60}ms` }} aria-busy={busy}>
+      <header className="match-head">
+        <Avatar name={p.name} goal={p.goal} />
         <div className="who">
           <h3>{p.name}</h3>
           <div className="muted">
             {p.role} · {t.years(p.experience_years)}
           </div>
-          <span className={`goal-badge goal-${p.goal}`}>{t.goals[p.goal]}</span>
+          <GoalBadge goal={p.goal}>{t.goals[p.goal]}</GoalBadge>
         </div>
-        <div className="score" style={{ ["--pct" as string]: pct }} title={`${pct}% ${t.match}`}>
-          <span>{pct}</span>
-        </div>
+        <ScoreRing value={m.score} label={t.match} />
       </header>
 
       <p className="why">{m.explanation}</p>
 
       <div className="give">
         <div>
-          <div className="label">{t.youGive}</div>
+          <div className="eyebrow">{t.youGive}</div>
           <p>{m.you_give}</p>
         </div>
         <div>
-          <div className="label">{t.theyGive}</div>
+          <div className="eyebrow">{t.theyGive}</div>
           <p>{m.they_give}</p>
         </div>
       </div>
@@ -74,20 +63,20 @@ export function MatchCard({ t, m, rank, busy, onFeedback }: Props) {
       )}
 
       <div className="ice">
-        <div className="label">{t.icebreaker}</div>
+        <div className="eyebrow">{t.icebreaker}</div>
         <p>“{m.icebreaker}”</p>
-        <button type="button" className="ghost small" onClick={copy}>
-          {copied ? t.copied : t.copy}
-        </button>
+        <Button type="button" variant="ghost" size="sm" onClick={copy} aria-live="polite">
+          {copied ? `✓ ${t.copied}` : t.copy}
+        </Button>
       </div>
 
       <footer className="actions">
-        <button type="button" className="ghost" disabled={busy} onClick={() => onFeedback("met")}>
+        <Button type="button" variant="ghost" disabled={busy} onClick={() => onFeedback("met")}>
           ✓ {t.met}
-        </button>
-        <button type="button" className="ghost" disabled={busy} onClick={() => onFeedback("not_fit")}>
+        </Button>
+        <Button type="button" variant="ghost" disabled={busy} onClick={() => onFeedback("not_fit")}>
           ✕ {t.notFit}
-        </button>
+        </Button>
       </footer>
     </article>
   );

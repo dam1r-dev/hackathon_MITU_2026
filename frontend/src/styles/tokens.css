@@ -1,50 +1,132 @@
-/* Design tokens. Dark by default, light via prefers-color-scheme or data-theme="light". */
+/*
+ * Design tokens: the single source for color, type, spacing, radius, shadow and motion.
+ * Components use only these variables. Preview them all at #/design.
+ * Dark by default; light via prefers-color-scheme, or force with <html data-theme="light|dark">.
+ */
 :root {
-  --bg: #0e1116;
-  --surface: #171b22;
-  --surface-2: #1f2430;
-  --text: #e8ebf0;
-  --text-dim: #9aa3b2;
-  --accent: #5b8cff;
-  --accent-soft: rgba(91, 140, 255, 0.14);
-  --accent-contrast: #ffffff;
-  --border: #2a3040;
-  --danger: #ff6b6b;
+  /* Color: surfaces and text */
+  --bg: #0d1015;
+  --surface: #161a21;
+  --surface-2: #1e232d;
+  --surface-3: #272d39;
+  --border: #2a303d;
+  --text: #e9ecf1;
+  --text-dim: #9ba4b4;
+  --text-faint: #6b7487;
 
-  /* One color per goal: used for badges, avatars, goal buttons and the room map. */
+  /* Color: brand and states */
+  --accent: #6b8cff;
+  --accent-strong: #8aa4ff;
+  --accent-soft: rgba(107, 140, 255, 0.14);
+  --accent-contrast: #ffffff;
+  --success: #4cc38a;
+  --danger: #ff6b6b;
+  --danger-soft: rgba(255, 107, 107, 0.12);
+
+  /* Color: one per goal (badges, avatars, goal picker, room map) */
   --g-find_job: #4cc38a;
   --g-hire: #3fb6d9;
   --g-find_mentor: #f2b84b;
-  --g-be_mentor: #e8875c;
+  --g-be_mentor: #ee8a5e;
   --g-find_cofounder: #b07cf2;
   --g-exchange_experience: #e46fa8;
 
-  --radius: 16px;
-  --radius-sm: 10px;
-  --gap: 16px;
+  /* Type */
   --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --fs-xs: 12px;
+  --fs-sm: 14px;
+  --fs-md: 16px;
+  --fs-lg: 18px;
+  --fs-xl: 22px;
+  --fs-2xl: clamp(28px, 6vw, 40px);
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --lh-tight: 1.2;
+  --lh-body: 1.5;
+
+  /* Space (4px grid) */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+
+  /* Shape */
+  --radius-sm: 10px;
+  --radius: 16px;
+  --radius-full: 999px;
+
+  /* Elevation */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.35);
+
+  /* Motion */
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --dur-fast: 120ms;
+  --dur: 240ms;
+
+  /* Layout */
+  --page-max: 760px;
+  --page-wide: 1120px;
+
+  color-scheme: dark;
 }
 
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
-    --bg: #f6f7fb;
+    --bg: #f5f6fa;
     --surface: #ffffff;
-    --surface-2: #eef0f6;
-    --text: #151922;
-    --text-dim: #5b6475;
-    --border: #dde1ea;
-    --accent: #3b6cf0;
-    --accent-soft: rgba(59, 108, 240, 0.1);
+    --surface-2: #eef0f5;
+    --surface-3: #e3e6ee;
+    --border: #dce0e9;
+    --text: #141821;
+    --text-dim: #586174;
+    --text-faint: #8a92a3;
+    --accent: #3a63e8;
+    --accent-strong: #2a4fcc;
+    --accent-soft: rgba(58, 99, 232, 0.1);
+    --danger: #d23b3b;
+    --danger-soft: rgba(210, 59, 59, 0.1);
+    --success: #239a63;
+    --g-find_job: #239a63;
+    --g-hire: #1d8cb0;
+    --g-find_mentor: #c48a14;
+    --g-be_mentor: #d0653a;
+    --g-find_cofounder: #8a52d6;
+    --g-exchange_experience: #c4437f;
+    --shadow-1: 0 1px 2px rgba(20, 24, 33, 0.08);
+    --shadow-2: 0 8px 24px rgba(20, 24, 33, 0.1);
+    color-scheme: light;
   }
 }
 
 :root[data-theme="light"] {
-  --bg: #f6f7fb;
+  --bg: #f5f6fa;
   --surface: #ffffff;
-  --surface-2: #eef0f6;
-  --text: #151922;
-  --text-dim: #5b6475;
-  --border: #dde1ea;
-  --accent: #3b6cf0;
-  --accent-soft: rgba(59, 108, 240, 0.1);
+  --surface-2: #eef0f5;
+  --surface-3: #e3e6ee;
+  --border: #dce0e9;
+  --text: #141821;
+  --text-dim: #586174;
+  --text-faint: #8a92a3;
+  --accent: #3a63e8;
+  --accent-strong: #2a4fcc;
+  --accent-soft: rgba(58, 99, 232, 0.1);
+  --danger: #d23b3b;
+  --danger-soft: rgba(210, 59, 59, 0.1);
+  --success: #239a63;
+  --g-find_job: #239a63;
+  --g-hire: #1d8cb0;
+  --g-find_mentor: #c48a14;
+  --g-be_mentor: #d0653a;
+  --g-find_cofounder: #8a52d6;
+  --g-exchange_experience: #c4437f;
+  --shadow-1: 0 1px 2px rgba(20, 24, 33, 0.08);
+  --shadow-2: 0 8px 24px rgba(20, 24, 33, 0.1);
+  color-scheme: light;
 }

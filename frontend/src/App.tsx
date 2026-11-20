@@ -1,125 +1,67 @@
 import { useEffect, useState } from "react";
-import { api } from "./api";
-import { MatchCard } from "./components/MatchCard";
-import { ProfileForm } from "./components/ProfileForm";
+import { Segmented } from "./components/ui";
 import { dict, LANGS } from "./i18n";
-import type { Lang, Match, ProfileIn } from "./types";
-
-const empty: ProfileIn = {
-  name: "",
-  role: "",
-  stack: [],
-  experience_years: 0,
-  interests: [],
-  about: "",
-  goal: "find_job",
-  lang: "ru",
-};
-
-function loadLang(): Lang {
-  try {
-    const v = localStorage.getItem("lang");
-    if (v === "kk" || v === "ru" || v === "en") return v;
-  } catch {
-    /* storage unavailable */
-  }
-  return "ru";
-}
+import { DesignPage } from "./pages/DesignPage";
+import { FindPage } from "./pages/FindPage";
+import { MapPage } from "./pages/MapPage";
+import { QrPage } from "./pages/QrPage";
+import { initialLang, storageSet, useMatcher, useRoute, type Route } from "./state";
+import type { Lang } from "./types";
 
 export default function App() {
-  const [lang, setLang] = useState<Lang>(loadLang);
+  const [lang, setLang] = useState<Lang>(initialLang);
+  const [route, go] = useRoute();
+  const matcher = useMatcher(lang);
   const t = dict[lang];
-  const [form, setForm] = useState<ProfileIn>({ ...empty, lang: loadLang() });
-  const [matches, setMatches] = useState<Match[] | null>(null);
-  const [tookMs, setTookMs] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(false);
-  // Id of the viewer in the backend. Created lazily on the first feedback, because
-  // /feedback needs a stored profile. Reset when the profile is edited.
-  const [viewerId, setViewerId] = useState<string | null>(null);
 
   useEffect(() => {
     document.documentElement.lang = lang;
-    try {
-      localStorage.setItem("lang", lang);
-    } catch {
-      /* storage unavailable */
-    }
+    storageSet("lang", lang);
   }, [lang]);
 
-  async function submit() {
-    setLoading(true);
-    setError(false);
-    setViewerId(null);
-    try {
-      const res = await api.recommend({ ...form, lang }, lang);
-      setMatches(res.matches);
-      setTookMs(res.took_ms);
-      requestAnimationFrame(() => document.getElementById("results")?.scrollIntoView({ behavior: "smooth" }));
-    } catch {
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
-  }
+  useEffect(() => {
+    const titles: Record<Route, string> = { find: t.title, join: t.joinTitle, map: t.mapTitle, qr: t.qrTitle, design: "Design system" };
+    document.title = `${titles[route]} · Meetup Matchmaker`;
+  }, [route, t]);
 
-  async function feedback(targetId: string, verdict: "met" | "not_fit") {
-    setBusy(true);
-    setError(false);
-    try {
-      let id = viewerId;
-      if (!id) {
-        id = (await api.addProfile({ ...form, lang })).id;
-        setViewerId(id);
-      }
-      const res = await api.feedback(id, targetId, verdict);
-      setMatches(res.matches);
-      setTookMs(res.took_ms);
-    } catch {
-      setError(true);
-    } finally {
-      setBusy(false);
-    }
-  }
+  const tabs: { route: Route; label: string }[] = [
+    { route: "find", label: t.navFind },
+    { route: "map", label: t.navMap },
+    { route: "qr", label: t.navQr },
+  ];
+  const activeTab = route === "join" ? "find" : route;
 
   return (
-    <div className="page">
+    <>
       <nav className="topbar">
-        <span className="brand">Meetup Matchmaker</span>
-        <div className="langs" role="group" aria-label="Language">
-          {LANGS.map((l) => (
-            <button key={l.code} type="button" data-active={lang === l.code} onClick={() => setLang(l.code)}>
-              {l.label}
-            </button>
-          ))}
+        <div className="topbar-inner">
+          <a className="brand" href="#/">
+            <span className="brand-mark" aria-hidden>
+              ◎
+            </span>
+            <span className="brand-name">Meetup Matchmaker</span>
+          </a>
+          <div className="tabs">
+            {tabs.map((x) => (
+              <a key={x.route} href={x.route === "find" ? "#/" : `#/${x.route}`} aria-current={activeTab === x.route ? "page" : undefined}>
+                {x.label}
+              </a>
+            ))}
+          </div>
+          <Segmented label="Language" options={LANGS} value={lang} onChange={setLang} />
         </div>
       </nav>
 
-      <header className="hero">
-        <h1>{t.title}</h1>
-        <p className="sub">{t.subtitle}</p>
-      </header>
+      <main>
+        {(route === "find" || route === "join") && <FindPage t={t} matcher={matcher} join={route === "join"} onShowMap={() => go("map")} />}
+        {route === "map" && <MapPage t={t} matcher={matcher} onFind={() => go("find")} />}
+        {route === "qr" && <QrPage t={t} />}
+        {route === "design" && <DesignPage t={t} />}
+      </main>
 
-      <ProfileForm t={t} value={form} onChange={(p) => { setForm(p); setViewerId(null); }} onSubmit={submit} loading={loading} />
-
-      {error && <p className="error">{t.error}</p>}
-
-      {matches && (
-        <section id="results" className="results">
-          <div className="results-head">
-            <h2>{t.results}</h2>
-            <span className="muted">{t.tookMs(tookMs)}</span>
-          </div>
-          {matches.length === 0 && <p className="muted">{t.empty}</p>}
-          {matches.map((m, i) => (
-            <MatchCard key={m.profile.id} t={t} m={m} rank={i} busy={busy} onFeedback={(v) => feedback(m.profile.id, v)} />
-          ))}
-          <button type="button" className="link" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
-            ↑ {t.edit}
-          </button>
-        </section>
-      )}
-    </div>
+      <footer className="footer">
+        AI in Engineering Hackathon 2026 · <a href="#/design">Design system</a>
+      </footer>
+    </>
   );
 }
