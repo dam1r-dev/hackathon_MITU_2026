@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { api } from "./api";
 import type { Lang, Match, ProfileIn } from "./types";
 
@@ -59,8 +59,8 @@ export const EMPTY_PROFILE: ProfileIn = {
 
 /**
  * Matching session: the viewer's form, their matches, and their id in the backend.
- * The id is created on /join (to appear on the map) or lazily on the first feedback,
- * because /feedback and /graph?viewer= need a stored profile.
+ * The id comes from POST /api/profiles, made on /join (to appear on the map) or lazily
+ * on the first feedback. Passing it as viewer_id hides the viewer from their own results.
  */
 export function useMatcher(lang: Lang) {
   const [form, setFormState] = useState<ProfileIn>({ ...EMPTY_PROFILE, lang });
@@ -70,20 +70,14 @@ export function useMatcher(lang: Lang) {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState(false);
   const [viewerId, setViewerId] = useState<string | null>(null);
-  // Every id we stored for this person. /recommend does not know who is asking,
-  // so we drop our own earlier copies from the results.
-  const ownIds = useRef(new Set<string>());
-
-  const clean = (ms: Match[]) => ms.filter((m) => !ownIds.current.has(m.profile.id));
 
   const setForm = useCallback((p: ProfileIn) => {
     setFormState(p);
-    setViewerId(null); // profile changed: next feedback stores a fresh copy
+    setViewerId(null); // profile changed: the stored copy is stale, store a fresh one when needed
   }, []);
 
   const register = async (profile: ProfileIn) => {
     const { id } = await api.addProfile(profile);
-    ownIds.current.add(id);
     setViewerId(id);
     return id;
   };
@@ -93,11 +87,10 @@ export function useMatcher(lang: Lang) {
     setError(false);
     const profile = { ...form, lang };
     try {
-      // Recommend first, then store: the new profile must not match itself.
-      const res = await api.recommend(profile, lang);
-      setMatches(clean(res.matches));
+      const id = viewerId ?? (opts.join ? await register(profile) : null);
+      const res = await api.recommend(profile, lang, id);
+      setMatches(res.matches);
       setTookMs(res.took_ms);
-      if (opts.join && !viewerId) await register(profile);
     } catch {
       setError(true);
     } finally {
@@ -111,7 +104,7 @@ export function useMatcher(lang: Lang) {
     try {
       const id = viewerId ?? (await register({ ...form, lang }));
       const res = await api.feedback(id, targetId, verdict);
-      setMatches(clean(res.matches));
+      setMatches(res.matches);
       setTookMs(res.took_ms);
     } catch {
       setError(true);

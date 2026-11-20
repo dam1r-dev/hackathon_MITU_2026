@@ -9,8 +9,9 @@ const post = (url: string, body: unknown) =>
   fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
 
 export const api = {
-  recommend: (profile: ProfileIn, lang: Lang) =>
-    post("/api/recommend", { profile, lang }).then((r) => json<RecommendResponse>(r)),
+  /** viewer_id (from addProfile) hides the viewer from their own results and applies their feedback. */
+  recommend: (profile: ProfileIn, lang: Lang, viewer_id?: string | null) =>
+    post("/api/recommend", { profile, lang, ...(viewer_id ? { viewer_id } : {}) }).then((r) => json<RecommendResponse>(r)),
 
   addProfile: (profile: ProfileIn) => post("/api/profiles", profile).then((r) => json<{ id: string }>(r)),
 
