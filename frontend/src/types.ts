@@ -61,3 +61,44 @@ export interface GraphResponse {
   nodes: GraphNode[];
   edges: { from: string; to: string; score: number }[];
 }
+
+// Events layer (docs/CONTRACT.md "Events, members, roles and access").
+export type SystemRole = "admin" | "organizer" | "member";
+
+export interface EventInfo {
+  id: string;
+  code: string;
+  title: string;
+  date: string;
+  venue: string;
+  status: "open" | "closed";
+  organizer_ids: string[];
+  created_at: string;
+  attendee_count: number;
+  join_path: string;
+  join_url: string;
+}
+
+export interface JoinResponse {
+  member_id: string;
+  token: string;
+  event: EventInfo;
+  took_ms: number;
+  matches: Match[];
+}
+
+export interface MeetResponse {
+  mutual: boolean;
+  contact: string | null;
+}
+
+export interface MutualOut {
+  profile: Profile;
+  contact: string | null;
+}
+
+export interface MeOut {
+  profile: Profile;
+  system_role: SystemRole;
+  events: EventInfo[];
+}

@@ -9,9 +9,12 @@ type Props = {
   rank: number;
   busy: boolean;
   onFeedback: (verdict: "met" | "not_fit") => void;
+  /** Event mode: "Want to meet" with mutual reveal of the contact. */
+  meet?: { state: "idle" | "waiting" | "mutual"; contact?: string | null; onClick: () => void };
+  isNew?: boolean;
 };
 
-export function MatchCard({ t, m, rank, busy, onFeedback }: Props) {
+export function MatchCard({ t, m, rank, busy, onFeedback, meet, isNew }: Props) {
   const [copied, setCopied] = useState(false);
   const p = m.profile;
 
@@ -26,7 +29,8 @@ export function MatchCard({ t, m, rank, busy, onFeedback }: Props) {
   }
 
   return (
-    <article className="card match" style={{ animationDelay: `${rank * 60}ms` }} aria-busy={busy}>
+    <article className="card match" data-new={isNew || undefined} style={{ animationDelay: `${rank * 60}ms` }} aria-busy={busy}>
+      {isNew && <span className="new-badge">{t.newBadge}</span>}
       <header className="match-head">
         <Avatar name={p.name} goal={p.goal} />
         <div className="who">
@@ -69,6 +73,23 @@ export function MatchCard({ t, m, rank, busy, onFeedback }: Props) {
           {copied ? `✓ ${t.copied}` : t.copy}
         </Button>
       </div>
+
+      {meet && (
+        <div className="meet" data-state={meet.state} aria-live="polite">
+          {meet.state === "idle" && (
+            <Button type="button" disabled={busy} onClick={meet.onClick}>
+              ♥ {t.wantMeet}
+            </Button>
+          )}
+          {meet.state === "waiting" && <p className="meet-note">⏳ {t.meetWaiting}</p>}
+          {meet.state === "mutual" && (
+            <p className="meet-note">
+              🎉 {t.meetMutual}{" "}
+              {meet.contact ? <strong className="mono">{meet.contact}</strong> : <span className="muted">{t.noContact}</span>}
+            </p>
+          )}
+        </div>
+      )}
 
       <footer className="actions">
         <Button type="button" variant="ghost" disabled={busy} onClick={() => onFeedback("met")}>

@@ -1,25 +1,77 @@
-import type { GraphResponse, Lang, Profile, ProfileIn, RecommendResponse } from "./types";
+import { session } from "./session";
+import type {
+  EventInfo,
+  GraphResponse,
+  JoinResponse,
+  Lang,
+  MeOut,
+  MeetResponse,
+  MutualOut,
+  Profile,
+  ProfileIn,
+  RecommendResponse,
+} from "./types";
+
+/** HTTP error with the backend's `detail` code (e.g. "event_closed", "sign_in_required"). */
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    public detail: string,
+  ) {
+    super(`${status} ${detail}`);
+  }
+}
 
 async function json<T>(res: Response): Promise<T> {
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  if (!res.ok) {
+    let detail = res.statusText;
+    try {
+      const body = await res.json();
+      if (typeof body?.detail === "string") detail = body.detail;
+    } catch {
+      /* not JSON */
+    }
+    throw new ApiError(res.status, detail);
+  }
   return res.json() as Promise<T>;
 }
 
-const post = (url: string, body: unknown) =>
-  fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+function headers(): HeadersInit {
+  const h: Record<string, string> = { "Content-Type": "application/json" };
+  const token = session.get()?.token;
+  if (token) h["X-Member-Token"] = token;
+  return h;
+}
+
+const get = <T>(url: string) => fetch(url, { headers: headers() }).then((r) => json<T>(r));
+const post = <T>(url: string, body: unknown) =>
+  fetch(url, { method: "POST", headers: headers(), body: JSON.stringify(body) }).then((r) => json<T>(r));
+
+const ev = (code: string) => `/api/events/by-code/${encodeURIComponent(code)}`;
 
 export const api = {
   /** viewer_id (from addProfile) hides the viewer from their own results and applies their feedback. */
   recommend: (profile: ProfileIn, lang: Lang, viewer_id?: string | null) =>
-    post("/api/recommend", { profile, lang, ...(viewer_id ? { viewer_id } : {}) }).then((r) => json<RecommendResponse>(r)),
+    post<RecommendResponse>("/api/recommend", { profile, lang, ...(viewer_id ? { viewer_id } : {}) }),
 
-  addProfile: (profile: ProfileIn) => post("/api/profiles", profile).then((r) => json<{ id: string }>(r)),
+  addProfile: (profile: ProfileIn) => post<{ id: string }>("/api/profiles", profile),
 
-  profiles: () => fetch("/api/profiles").then((r) => json<Profile[]>(r)),
+  profiles: () => get<Profile[]>("/api/profiles"),
 
-  graph: (viewer?: string) =>
-    fetch(`/api/graph${viewer ? `?viewer=${encodeURIComponent(viewer)}` : ""}`).then((r) => json<GraphResponse>(r)),
+  graph: (viewer?: string) => get<GraphResponse>(`/api/graph${viewer ? `?viewer=${encodeURIComponent(viewer)}` : ""}`),
 
-  feedback: (viewer_id: string, target_id: string, verdict: "met" | "not_fit") =>
-    post("/api/feedback", { viewer_id, target_id, verdict }).then((r) => json<RecommendResponse>(r)),
+  feedback: (viewer_id: string, target_id: string, verdict: "met" | "not_fit", event_code?: string) =>
+    post<RecommendResponse>("/api/feedback", { viewer_id, target_id, verdict, ...(event_code ? { event_code } : {}) }),
+
+  // Events (public)
+  event: (code: string) => get<EventInfo>(ev(code)),
+  eventQrUrl: (code: string) => `${ev(code)}/qr.svg`,
+  eventGraph: (code: string) => get<GraphResponse>(`${ev(code)}/graph`),
+  join: (code: string, body: { profile?: ProfileIn; contact?: string; lang: Lang }) => post<JoinResponse>(`${ev(code)}/join`, body),
+
+  // Events (member token)
+  eventMatches: (code: string, lang: Lang) => get<RecommendResponse>(`${ev(code)}/matches?lang=${lang}`),
+  meet: (code: string, target_id: string) => post<MeetResponse>(`${ev(code)}/meet`, { target_id }),
+  mutual: (code: string) => get<MutualOut[]>(`${ev(code)}/mutual`),
+  me: () => get<MeOut>("/api/me"),
 };

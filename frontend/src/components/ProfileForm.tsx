@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import type { Dict } from "../i18n";
 import { GOALS, type ProfileIn } from "../types";
 import { TagInput } from "./TagInput";
@@ -24,9 +24,12 @@ type Props = {
   onChange: (p: ProfileIn) => void;
   onSubmit: () => void;
   loading: boolean;
+  /** Extra fields shown before the submit button (e.g. contact on event join). */
+  children?: ReactNode;
+  submitLabel?: string;
 };
 
-export function ProfileForm({ t, value, onChange, onSubmit, loading }: Props) {
+export function ProfileForm({ t, value, onChange, onSubmit, loading, children, submitLabel }: Props) {
   const [touched, setTouched] = useState(false);
   const set = <K extends keyof ProfileIn>(k: K, v: ProfileIn[K]) => onChange({ ...value, [k]: v });
   const missing = { name: !value.name.trim(), role: !value.role.trim() };
@@ -127,13 +130,15 @@ export function ProfileForm({ t, value, onChange, onSubmit, loading }: Props) {
         <textarea id="f-about" rows={3} maxLength={400} placeholder={t.aboutHint} value={value.about} onChange={(e) => set("about", e.target.value)} />
       </div>
 
+      {children}
+
       <Button type="submit" disabled={loading}>
         {loading ? (
           <>
             <Spinner /> {t.loading}
           </>
         ) : (
-          t.submit
+          submitLabel ?? t.submit
         )}
       </Button>
     </form>

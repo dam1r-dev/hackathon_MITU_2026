@@ -5,7 +5,44 @@ export type Dict = {
   // nav
   navFind: string;
   navMap: string;
-  navQr: string;
+  navMe: string;
+  navScreen: string;
+  // events
+  eventLoading: string;
+  eventNotFound: string;
+  eventClosed: string;
+  eventJoinSub: string;
+  joinCta: string;
+  joining: string;
+  contact: string;
+  contactHint: string;
+  continueAs: (name: string) => string;
+  notYou: string;
+  eventResults: string;
+  liveUpdates: string;
+  newBadge: string;
+  fewYet: string;
+  wantMeet: string;
+  meetWaiting: string;
+  meetMutual: string;
+  noContact: string;
+  mutualTitle: string;
+  notInEvent: string;
+  // projector
+  screenScan: string;
+  screenCode: string;
+  screenEmpty: string;
+  inRoom: string;
+  // profile
+  meTitle: string;
+  meEmpty: string;
+  myEvents: string;
+  openEvent: string;
+  forget: string;
+  language: string;
+  appearance: string;
+  themes: Record<"system" | "light" | "dark", string>;
+  roles: Record<"admin" | "organizer" | "member", string>;
   // find page
   title: string;
   subtitle: string;
@@ -53,12 +90,6 @@ export type Dict = {
   live: string;
   allGoals: string;
   // qr page
-  qrTitle: string;
-  qrSubtitle: string;
-  qrUrl: string;
-  qrLocal: string;
-  qrOpen: string;
-  qrJoined: (n: number) => string;
   goals: Record<Goal, string>;
   goalHints: Record<Goal, string>;
 };
@@ -66,7 +97,41 @@ export type Dict = {
 const en: Dict = {
   navFind: "Find people",
   navMap: "Room map",
-  navQr: "QR",
+  navMe: "Profile",
+  navScreen: "Projector screen",
+  eventLoading: "Loading the event...",
+  eventNotFound: "Event not found. Check the code or scan the QR again.",
+  eventClosed: "Registration for this event is closed.",
+  eventJoinSub: "60 seconds: tell us who you are and get the 5 people at this event worth meeting.",
+  joinCta: "Join and get my 5 people",
+  joining: "Joining...",
+  contact: "Contact (optional)",
+  contactHint: "Telegram or phone. Shown only to people who also want to meet you.",
+  continueAs: (name) => `Continue as ${name}`,
+  notYou: "Not you? Fill in a new profile",
+  eventResults: "Your 5 people here",
+  liveUpdates: "Updates as people arrive",
+  newBadge: "New",
+  fewYet: "Only a few people have joined so far. Your list will grow as others arrive.",
+  wantMeet: "Want to meet",
+  meetWaiting: "Sent. If they press it too, you will both see contacts.",
+  meetMutual: "It's mutual! Contact:",
+  noContact: "no contact left, find them in the room",
+  mutualTitle: "Mutual: go say hi",
+  notInEvent: "You are not in this event yet.",
+  screenScan: "Scan to join",
+  screenCode: "Event code",
+  screenEmpty: "Nobody yet. Be the first to scan!",
+  inRoom: "in the room",
+  meTitle: "My profile",
+  meEmpty: "You have not joined an event yet. Scan the QR code at the venue.",
+  myEvents: "My events",
+  openEvent: "Open my 5",
+  forget: "Forget me on this device",
+  language: "Interface language",
+  appearance: "Appearance",
+  themes: { system: "System", light: "Light", dark: "Dark" },
+  roles: { admin: "Admin", organizer: "Organizer", member: "Member" },
   title: "Who should you meet?",
   subtitle: "Fill in a short profile and get 5 people worth meeting at this event.",
   joinTitle: "Join the room",
@@ -111,12 +176,6 @@ const en: Dict = {
   mapHint: "Fill in your profile to see your matches here.",
   live: "Live",
   allGoals: "All",
-  qrTitle: "Scan to join",
-  qrSubtitle: "Point your phone camera at the code, add your profile and get your 5 people.",
-  qrUrl: "Link in the code",
-  qrLocal: "Phones cannot open localhost. Use this computer's network address, e.g. http://192.168.1.10:3000",
-  qrOpen: "Open the join page",
-  qrJoined: (n) => `${n} in the room`,
   goals: {
     find_job: "Find a job",
     hire: "Hire",
@@ -138,7 +197,41 @@ const en: Dict = {
 const ru: Dict = {
   navFind: "Подбор",
   navMap: "Карта зала",
-  navQr: "QR",
+  navMe: "Профиль",
+  navScreen: "Экран для проектора",
+  eventLoading: "Загружаем мероприятие...",
+  eventNotFound: "Мероприятие не найдено. Проверьте код или отсканируйте QR ещё раз.",
+  eventClosed: "Регистрация на это мероприятие закрыта.",
+  eventJoinSub: "60 секунд: расскажите о себе и получите 5 человек на этом мероприятии, с которыми стоит познакомиться.",
+  joinCta: "Присоединиться и найти 5 человек",
+  joining: "Присоединяем...",
+  contact: "Контакт (необязательно)",
+  contactHint: "Telegram или телефон. Увидят только те, кто тоже захочет познакомиться с вами.",
+  continueAs: (name) => `Продолжить как ${name}`,
+  notYou: "Не вы? Заполните новую анкету",
+  eventResults: "Ваши 5 человек здесь",
+  liveUpdates: "Обновляется, когда приходят люди",
+  newBadge: "Новый",
+  fewYet: "Пока присоединились немногие. Список пополнится, когда придут другие.",
+  wantMeet: "Хочу познакомиться",
+  meetWaiting: "Отправлено. Если человек тоже нажмёт, вы оба увидите контакты.",
+  meetMutual: "Взаимно! Контакт:",
+  noContact: "контакт не оставлен, найдите человека в зале",
+  mutualTitle: "Взаимно: подойдите поздороваться",
+  notInEvent: "Вы ещё не участник этого мероприятия.",
+  screenScan: "Отсканируйте, чтобы присоединиться",
+  screenCode: "Код мероприятия",
+  screenEmpty: "Пока никого. Отсканируйте первым!",
+  inRoom: "в зале",
+  meTitle: "Мой профиль",
+  meEmpty: "Вы ещё не присоединились к мероприятию. Отсканируйте QR-код на месте.",
+  myEvents: "Мои мероприятия",
+  openEvent: "Открыть мои 5",
+  forget: "Забыть меня на этом устройстве",
+  language: "Язык интерфейса",
+  appearance: "Оформление",
+  themes: { system: "Как в системе", light: "Светлая", dark: "Тёмная" },
+  roles: { admin: "Админ", organizer: "Организатор", member: "Участник" },
   title: "С кем познакомиться?",
   subtitle: "Заполните короткую анкету и получите 5 человек, с которыми стоит познакомиться на этом мероприятии.",
   joinTitle: "Присоединиться",
@@ -188,12 +281,6 @@ const ru: Dict = {
   mapHint: "Заполните анкету, чтобы увидеть здесь свои совпадения.",
   live: "Онлайн",
   allGoals: "Все",
-  qrTitle: "Отсканируйте, чтобы присоединиться",
-  qrSubtitle: "Наведите камеру телефона на код, заполните анкету и получите своих 5 человек.",
-  qrUrl: "Ссылка в коде",
-  qrLocal: "Телефон не откроет localhost. Укажите сетевой адрес этого компьютера, например http://192.168.1.10:3000",
-  qrOpen: "Открыть страницу анкеты",
-  qrJoined: (n) => `В зале: ${n}`,
   goals: {
     find_job: "Найти работу",
     hire: "Нанять",
@@ -215,7 +302,41 @@ const ru: Dict = {
 const kk: Dict = {
   navFind: "Іздеу",
   navMap: "Зал картасы",
-  navQr: "QR",
+  navMe: "Профиль",
+  navScreen: "Проектор экраны",
+  eventLoading: "Іс-шара жүктелуде...",
+  eventNotFound: "Іс-шара табылмады. Кодты тексеріңіз немесе QR-ды қайта сканерлеңіз.",
+  eventClosed: "Бұл іс-шараға тіркелу жабық.",
+  eventJoinSub: "60 секунд: өзіңіз туралы айтып, осы іс-шарада танысуға тұрарлық 5 адамды табыңыз.",
+  joinCta: "Қосылып, 5 адамды табу",
+  joining: "Қосылып жатырмыз...",
+  contact: "Байланыс (міндетті емес)",
+  contactHint: "Telegram немесе телефон. Сізбен де танысқысы келетіндер ғана көреді.",
+  continueAs: (name) => `${name} ретінде жалғастыру`,
+  notYou: "Сіз емессіз бе? Жаңа сауалнама толтырыңыз",
+  eventResults: "Осындағы сіздің 5 адамыңыз",
+  liveUpdates: "Адамдар келген сайын жаңарады",
+  newBadge: "Жаңа",
+  fewYet: "Әзірге аз адам қосылды. Басқалар келгенде тізім толығады.",
+  wantMeet: "Танысқым келеді",
+  meetWaiting: "Жіберілді. Ол да басса, екеуіңіз де байланысты көресіздер.",
+  meetMutual: "Өзара! Байланыс:",
+  noContact: "байланыс қалдырылмаған, оны залдан табыңыз",
+  mutualTitle: "Өзара: барып амандасыңыз",
+  notInEvent: "Сіз әлі бұл іс-шараның қатысушысы емессіз.",
+  screenScan: "Қосылу үшін сканерлеңіз",
+  screenCode: "Іс-шара коды",
+  screenEmpty: "Әзірге ешкім жоқ. Бірінші болып сканерлеңіз!",
+  inRoom: "залда",
+  meTitle: "Менің профилім",
+  meEmpty: "Сіз әлі іс-шараға қосылмадыңыз. Орындағы QR-кодты сканерлеңіз.",
+  myEvents: "Менің іс-шараларым",
+  openEvent: "Менің 5 адамымды ашу",
+  forget: "Осы құрылғыда мені ұмыту",
+  language: "Интерфейс тілі",
+  appearance: "Безендіру",
+  themes: { system: "Жүйедегідей", light: "Жарық", dark: "Қараңғы" },
+  roles: { admin: "Әкімші", organizer: "Ұйымдастырушы", member: "Қатысушы" },
   title: "Кіммен танысу керек?",
   subtitle: "Қысқа сауалнаманы толтырып, осы іс-шарада танысуға тұрарлық 5 адамды табыңыз.",
   joinTitle: "Қосылу",
@@ -260,12 +381,6 @@ const kk: Dict = {
   mapHint: "Сәйкестіктерді осында көру үшін сауалнаманы толтырыңыз.",
   live: "Тікелей",
   allGoals: "Барлығы",
-  qrTitle: "Қосылу үшін сканерлеңіз",
-  qrSubtitle: "Телефон камерасын кодқа бағыттап, сауалнаманы толтырыңыз және өз 5 адамыңызды алыңыз.",
-  qrUrl: "Кодтағы сілтеме",
-  qrLocal: "Телефон localhost ашпайды. Осы компьютердің желілік мекенжайын көрсетіңіз, мысалы http://192.168.1.10:3000",
-  qrOpen: "Сауалнама бетін ашу",
-  qrJoined: (n) => `Залда: ${n}`,
   goals: {
     find_job: "Жұмыс табу",
     hire: "Жұмысқа алу",

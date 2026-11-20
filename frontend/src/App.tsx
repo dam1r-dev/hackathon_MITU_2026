@@ -1,16 +1,20 @@
 import { useEffect, useState } from "react";
-import { Segmented } from "./components/ui";
+import { Segmented, ThemeToggle } from "./components/ui";
 import { dict, LANGS } from "./i18n";
 import { DesignPage } from "./pages/DesignPage";
+import { EventJoinPage } from "./pages/EventJoinPage";
+import { EventPage } from "./pages/EventPage";
 import { FindPage } from "./pages/FindPage";
 import { MapPage } from "./pages/MapPage";
-import { QrPage } from "./pages/QrPage";
-import { initialLang, storageSet, useMatcher, useRoute, type Route } from "./state";
+import { ProfilePage } from "./pages/ProfilePage";
+import { ScreenPage } from "./pages/ScreenPage";
+import { href, initialLang, storageSet, useMatcher, useRoute, useTheme, type RouteName } from "./state";
 import type { Lang } from "./types";
 
 export default function App() {
   const [lang, setLang] = useState<Lang>(initialLang);
   const [route, go] = useRoute();
+  const [theme, setTheme] = useTheme();
   const matcher = useMatcher(lang);
   const t = dict[lang];
 
@@ -20,48 +24,69 @@ export default function App() {
   }, [lang]);
 
   useEffect(() => {
-    const titles: Record<Route, string> = { find: t.title, join: t.joinTitle, map: t.mapTitle, qr: t.qrTitle, design: "Design system" };
-    document.title = `${titles[route]} · Meetup Matchmaker`;
+    const titles: Record<RouteName, string> = {
+      find: t.title,
+      join: t.joinTitle,
+      "event-join": t.joinTitle,
+      event: t.eventResults,
+      screen: t.screenScan,
+      me: t.meTitle,
+      map: t.mapTitle,
+      design: "Design system",
+    };
+    document.title = `${titles[route.name]} · Meetup Matchmaker`;
   }, [route, t]);
 
-  const tabs: { route: Route; label: string }[] = [
-    { route: "find", label: t.navFind },
-    { route: "map", label: t.navMap },
-    { route: "qr", label: t.navQr },
+  const tabs: { name: RouteName; label: string }[] = [
+    { name: "find", label: t.navFind },
+    { name: "map", label: t.navMap },
+    { name: "me", label: t.navMe },
   ];
-  const activeTab = route === "join" ? "find" : route;
+  const active: RouteName =
+    route.name === "join" ? "find" : route.name === "event" || route.name === "event-join" ? "me" : route.name;
+  const projector = route.name === "screen";
 
   return (
     <>
-      <nav className="topbar">
-        <div className="topbar-inner">
-          <a className="brand" href="#/">
-            <span className="brand-mark" aria-hidden>
-              ◎
-            </span>
-            <span className="brand-name">Meetup Matchmaker</span>
-          </a>
-          <div className="tabs">
-            {tabs.map((x) => (
-              <a key={x.route} href={x.route === "find" ? "#/" : `#/${x.route}`} aria-current={activeTab === x.route ? "page" : undefined}>
-                {x.label}
-              </a>
-            ))}
+      {!projector && (
+        <nav className="topbar">
+          <div className="topbar-inner">
+            <a className="brand" href="#/">
+              <span className="brand-mark" aria-hidden>
+                ◎
+              </span>
+              <span className="brand-name">Meetup Matchmaker</span>
+            </a>
+            <div className="tabs">
+              {tabs.map((x) => (
+                <a key={x.name} href={href({ name: x.name })} aria-current={active === x.name ? "page" : undefined}>
+                  {x.label}
+                </a>
+              ))}
+            </div>
+            <Segmented label={t.language} options={LANGS} value={lang} onChange={setLang} />
+            <ThemeToggle value={theme} onChange={setTheme} labels={t.themes} label={t.appearance} />
           </div>
-          <Segmented label="Language" options={LANGS} value={lang} onChange={setLang} />
-        </div>
-      </nav>
+        </nav>
+      )}
 
       <main>
-        {(route === "find" || route === "join") && <FindPage t={t} matcher={matcher} join={route === "join"} onShowMap={() => go("map")} />}
-        {route === "map" && <MapPage t={t} matcher={matcher} onFind={() => go("find")} />}
-        {route === "qr" && <QrPage t={t} />}
-        {route === "design" && <DesignPage t={t} />}
+        {(route.name === "find" || route.name === "join") && (
+          <FindPage t={t} matcher={matcher} join={route.name === "join"} onShowMap={() => go({ name: "map" })} />
+        )}
+        {route.name === "event-join" && <EventJoinPage key={route.code} t={t} lang={lang} code={route.code!} go={go} />}
+        {route.name === "event" && <EventPage key={route.code} t={t} lang={lang} code={route.code!} go={go} />}
+        {route.name === "screen" && <ScreenPage t={t} code={route.code!} go={go} />}
+        {route.name === "me" && <ProfilePage t={t} lang={lang} setLang={setLang} theme={theme} setTheme={setTheme} go={go} />}
+        {route.name === "map" && <MapPage t={t} matcher={matcher} onFind={() => go({ name: "find" })} />}
+        {route.name === "design" && <DesignPage t={t} />}
       </main>
 
-      <footer className="footer">
-        AI in Engineering Hackathon 2026 · <a href="#/design">Design system</a>
-      </footer>
+      {!projector && (
+        <footer className="footer">
+          AI in Engineering Hackathon 2026 · <a href={href({ name: "screen" })}>{t.navScreen}</a> · <a href="#/design">Design system</a>
+        </footer>
+      )}
     </>
   );
 }
