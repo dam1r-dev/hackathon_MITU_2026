@@ -11,6 +11,7 @@ from .api_events import router as events_router
 from . import telegram
 from .github import router as github_router
 from .api_meetings import router as meetings_router
+from .forecast import router as forecast_router
 from .ctx import ctx
 from .events_models import DEFAULT_LOCATIONS
 from .embeddings import Embedder
@@ -102,6 +103,7 @@ app = FastAPI(title="Meetup Matchmaker", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 app.include_router(events_router)
 app.include_router(meetings_router)
+app.include_router(forecast_router)
 app.include_router(telegram.router)
 app.include_router(github_router)
 

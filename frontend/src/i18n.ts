@@ -1,4 +1,4 @@
-import type { Goal, Lang } from "./types";
+import type { Goal, Lang, Level, RoleFamily } from "./types";
 
 // All UI texts live here so kk/ru/en can be switched.
 export type Dict = {
@@ -270,6 +270,32 @@ export type Dict = {
   insightTop: (name: string, meetings: number, now: number) => string;
   insightLow: (pct: number) => string;
   inviteWho: Record<Goal, string>;
+  // Pre-event forecast (admin)
+  adminTabForecast: string;
+  fcTitle: string;
+  fcSub: string;
+  fcKpiRegistered: string;
+  fcKpiWithPair: string;
+  fcKpiWithout: string;
+  fcKpiTopStack: string;
+  fcStacks: string;
+  fcRoles: string;
+  fcLevels: string;
+  fcLangs: string;
+  fcGoals: string;
+  fcTips: string;
+  fcNoTips: string;
+  fcEmpty: string;
+  fcWithoutBy: string;
+  roleFamily: Record<RoleFamily, string>;
+  levelName: Record<Level, string>;
+  langName: Record<Lang, string>;
+  tipStackGap: (stack: string, seekers: number, hirers: number) => string;
+  tipStackCluster: (stack: string, count: number, pct: number) => string;
+  tipMostlyJunior: (pct: number) => string;
+  tipNoPair: (count: number, goal: string, who: string) => string;
+  tipCofounderThin: (count: number) => string;
+  tipFewRegistered: (count: number) => string;
 };
 
 const en: Dict = {
@@ -549,6 +575,31 @@ const en: Dict = {
   insightTop: (name, m, now) => `Busiest spot: ${name} (${m} meetings, ${now} here now).`,
   insightLow: (pct) => `Only ${pct}% found a match. Encourage "Meet now" and show matches on the projector.`,
   inviteWho: { find_job: "job seekers", hire: "HR and hiring managers", find_mentor: "people looking for a mentor", be_mentor: "mentors", find_cofounder: "co-founder seekers", exchange_experience: "more peers" },
+  adminTabForecast: "Forecast",
+  fcTitle: "Pre-event forecast",
+  fcSub: "Who has registered so far and what to prepare before the doors open.",
+  fcKpiRegistered: "Registered",
+  fcKpiWithPair: "Will find a pair",
+  fcKpiWithout: "No pair yet",
+  fcKpiTopStack: "Top stack",
+  fcStacks: "Stacks",
+  fcRoles: "Roles",
+  fcLevels: "Experience",
+  fcLangs: "Languages",
+  fcGoals: "Goals",
+  fcTips: "Recommendations",
+  fcNoTips: "The room looks balanced. Nothing to fix before the event.",
+  fcEmpty: "Nobody has registered yet. Share the event link or QR code to see the forecast.",
+  fcWithoutBy: "Nobody to match with yet",
+  roleFamily: { backend: "Backend", frontend: "Frontend", mobile: "Mobile", data: "Data / ML", devops: "DevOps / SRE", design: "Design", product: "Product", qa: "QA", security: "Security", management: "Management / HR", other: "Other" },
+  levelName: { junior: "Junior (<2 y)", middle: "Middle (2–4 y)", senior: "Senior (5–9 y)", lead: "Lead (10+ y)" },
+  langName: { kk: "Kazakh", ru: "Russian", en: "English" },
+  tipStackGap: (s, n, h) => `${n} job seekers know ${s}, but ${h ? `only ${h} employer${h === 1 ? " is" : "s are"}` : "no employers are"} hiring for it. Invite companies that hire ${s} developers.`,
+  tipStackCluster: (s, n, pct) => `${s} is the biggest group: ${n} people (${pct}%). Set up a ${s} table or zone so they find each other faster.`,
+  tipMostlyJunior: (pct) => `${pct}% of the room has under 2 years of experience. Add a career talk and invite more mentors.`,
+  tipNoPair: (n, goal, who) => `${n} people have nobody to match with yet (mostly "${goal}"). Invite ${who}.`,
+  tipCofounderThin: (n) => `Only ${n} looking for a co-founder: a startup section would be empty. Invite founders or skip it.`,
+  tipFewRegistered: (n) => `Only ${n} registered so far. Share the link in community chats: the forecast gets reliable from about 10 people.`,
 };
 
 const ru: Dict = {
@@ -833,6 +884,31 @@ const ru: Dict = {
   insightTop: (name, m, now) => `Самое людное место: ${name} (встреч: ${m}, сейчас здесь: ${now}).`,
   insightLow: (pct) => `Совпадение нашли только ${pct}%. Предлагайте «Встретиться сейчас» и показывайте совпадения на проекторе.`,
   inviteWho: { find_job: "тех, кто ищет работу", hire: "HR и рекрутеров", find_mentor: "тех, кто ищет ментора", be_mentor: "менторов", find_cofounder: "тех, кто ищет сооснователя", exchange_experience: "больше коллег" },
+  adminTabForecast: "Прогноз",
+  fcTitle: "Прогноз до мероприятия",
+  fcSub: "Кто уже зарегистрировался и что подготовить до начала.",
+  fcKpiRegistered: "Зарегистрировано",
+  fcKpiWithPair: "Найдут пару",
+  fcKpiWithout: "Пока без пары",
+  fcKpiTopStack: "Главный стек",
+  fcStacks: "Стеки",
+  fcRoles: "Роли",
+  fcLevels: "Опыт",
+  fcLangs: "Языки",
+  fcGoals: "Цели",
+  fcTips: "Рекомендации",
+  fcNoTips: "Зал сбалансирован. До мероприятия ничего исправлять не нужно.",
+  fcEmpty: "Пока никто не зарегистрировался. Отправьте ссылку или QR мероприятия, чтобы увидеть прогноз.",
+  fcWithoutBy: "Пока не с кем познакомиться",
+  roleFamily: { backend: "Бэкенд", frontend: "Фронтенд", mobile: "Мобильная разработка", data: "Данные / ML", devops: "DevOps / SRE", design: "Дизайн", product: "Продукт", qa: "QA", security: "Безопасность", management: "Руководство / HR", other: "Другое" },
+  levelName: { junior: "Джуны (<2 лет)", middle: "Мидлы (2–4 года)", senior: "Сеньоры (5–9 лет)", lead: "Лиды (10+ лет)" },
+  langName: { kk: "Казахский", ru: "Русский", en: "Английский" },
+  tipStackGap: (s, n, h) => `${n} соискателей знают ${s}, а работодателей, которым нужен ${s}, ${h ? `только ${h}` : "ни одного"}. Пригласите компании, которые нанимают ${s}-разработчиков.`,
+  tipStackCluster: (s, n, pct) => `Самая большая группа — ${s}: ${n} человек (${pct}%). Сделайте стол или зону ${s}, чтобы они быстрее нашли друг друга.`,
+  tipMostlyJunior: (pct) => `У ${pct}% зала опыт меньше 2 лет. Добавьте доклад о карьере и пригласите больше менторов.`,
+  tipNoPair: (n, goal, who) => `${n} человек пока не с кем познакомиться (чаще всего цель «${goal}»). Пригласите ${who}.`,
+  tipCofounderThin: (n) => `Сооснователя ищут только ${n}: секция стартапов будет пустой. Пригласите фаундеров или уберите секцию.`,
+  tipFewRegistered: (n) => `Пока зарегистрировалось только ${n}. Разошлите ссылку по чатам сообщества: прогноз становится надёжным примерно с 10 человек.`,
 };
 
 const kk: Dict = {
@@ -1112,6 +1188,31 @@ const kk: Dict = {
   insightTop: (name, m, now) => `Ең көп қауымдасатын жер: ${name} (кездесу: ${m}, қазір осында: ${now}).`,
   insightLow: (pct) => `Сәйкестікті тек ${pct}% тапты. «Қазір кездесу» батырмасын ұсынып, сәйкестіктерді проекторда көрсетіңіз.`,
   inviteWho: { find_job: "жұмыс іздейтіндерді", hire: "HR мен рекрутерлерді", find_mentor: "ментор іздейтіндерді", be_mentor: "тәлімгерлерді", find_cofounder: "тең құрылтайшы іздейтіндерді", exchange_experience: "көбірек әріптестерді" },
+  adminTabForecast: "Болжам",
+  fcTitle: "Іс-шараға дейінгі болжам",
+  fcSub: "Кім тіркелді және басталғанға дейін не дайындау керек.",
+  fcKpiRegistered: "Тіркелді",
+  fcKpiWithPair: "Жұп табады",
+  fcKpiWithout: "Әзірге жұпсыз",
+  fcKpiTopStack: "Басты стек",
+  fcStacks: "Стектер",
+  fcRoles: "Рөлдер",
+  fcLevels: "Тәжірибе",
+  fcLangs: "Тілдер",
+  fcGoals: "Мақсаттар",
+  fcTips: "Ұсыныстар",
+  fcNoTips: "Зал тепе-тең. Іс-шараға дейін ештеңе түзетудің қажеті жоқ.",
+  fcEmpty: "Әзірге ешкім тіркелмеді. Болжамды көру үшін іс-шара сілтемесін немесе QR кодын жіберіңіз.",
+  fcWithoutBy: "Әзірге танысатын адам жоқ",
+  roleFamily: { backend: "Бэкенд", frontend: "Фронтенд", mobile: "Мобильді әзірлеу", data: "Деректер / ML", devops: "DevOps / SRE", design: "Дизайн", product: "Өнім", qa: "QA", security: "Қауіпсіздік", management: "Басшылық / HR", other: "Басқа" },
+  levelName: { junior: "Джуниорлар (<2 жыл)", middle: "Мидлдар (2–4 жыл)", senior: "Сеньорлар (5–9 жыл)", lead: "Лидтер (10+ жыл)" },
+  langName: { kk: "Қазақ тілі", ru: "Орыс тілі", en: "Ағылшын тілі" },
+  tipStackGap: (s, n, h) => `${s} білетін ${n} үміткер бар, ал ${s} маманын іздейтін жұмыс беруші ${h ? `тек ${h}` : "жоқ"}. ${s} әзірлеушілерін жалдайтын компанияларды шақырыңыз.`,
+  tipStackCluster: (s, n, pct) => `Ең үлкен топ — ${s}: ${n} адам (${pct}%). Олар бір-бірін тез табуы үшін ${s} үстелін немесе аймағын жасаңыз.`,
+  tipMostlyJunior: (pct) => `Залдың ${pct}% тәжірибесі 2 жылдан аз. Мансап туралы баяндама қосып, көбірек ментор шақырыңыз.`,
+  tipNoPair: (n, goal, who) => `${n} адамның әзірге танысатын адамы жоқ (көбіне «${goal}» мақсаты). ${who} шақырыңыз.`,
+  tipCofounderThin: (n) => `Тең құрылтайшыны тек ${n} адам іздейді: стартап секциясы бос болады. Фаундерлерді шақырыңыз немесе секцияны алып тастаңыз.`,
+  tipFewRegistered: (n) => `Әзірге тек ${n} адам тіркелді. Сілтемені қауымдастық чаттарына жіберіңіз: болжам шамамен 10 адамнан бастап сенімді болады.`,
 };
 
 export const dict: Record<Lang, Dict> = { en, ru, kk };

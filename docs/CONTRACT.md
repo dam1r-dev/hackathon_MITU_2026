@@ -168,6 +168,31 @@ Organizer rights apply only to events where the member is listed in `organizer_i
 | `DELETE /api/members/{member_id}` | admin | Remove the member everywhere |
 | `POST /api/events/{event_id}/telegram-summary` | admin, organizer | Send every Telegram-linked attendee a personal results message in their profile language: people met (mutual pairs plus done meetings, deduped, up to 10 listed), contacts only for mutual pairs, "met at <location>" for done meetings, a thank-you; attendees with nothing get a friendly "no matches this time" line. Returns `{ "sent": n, "linked": m }`. `409 telegram_off` when the bot is off |
 
+### Pre-event forecast (admin, organizer)
+`GET /api/events/{event_id}/forecast`: who has registered so far and what the organizer should do before the event. Pure counting over attendees (no LLM, no per-request embeddings), so it answers in milliseconds. `403` for members, `401` without a token.
+```json
+{
+  "attendees": 42,
+  "by_goal": [{ "goal": "find_job", "count": 18 }],
+  "stacks": [{ "name": "Python", "count": 14 }],
+  "roles": [{ "name": "backend", "count": 11 }],
+  "levels": [{ "name": "junior", "count": 20 }],
+  "langs": [{ "name": "ru", "count": 25 }],
+  "pairs": { "with_pair": 37, "without_pair": 5, "without_by_goal": [{ "goal": "find_mentor", "count": 5 }] },
+  "tips": [{ "code": "stack_gap", "params": { "stack": "Python", "seekers": 9, "hirers": 1 } }]
+}
+```
+- `stacks`: top 8 stack tags; `roles`: role family by keywords in `role` (`backend`, `frontend`, `mobile`, `data`, `devops`, `design`, `product`, `qa`, `security`, `management`, `other`); `levels` by `experience_years`: `junior` < 2, `middle` 2–4, `senior` 5–9, `lead` 10+. `stacks`, `roles`, `langs` are sorted by count; `levels` go junior to lead; zero counts are omitted (`by_goal` keeps all 6 goals).
+- `pairs.with_pair`: attendees who have at least one other attendee with the reciprocal goal (job seeker and hirer, mentee and mentor, cofounder and cofounder, exchange and exchange).
+- `tips[].code`, rendered by the UI in kk/ru/en:
+  - `scarce_supply` `{scarce, plenty, scarce_count, plenty_count}`: same rule as `stats.hints`.
+  - `stack_gap` `{stack, seekers, hirers}`: at least 4 job seekers with this stack and hirers asking for it are at most a quarter of them.
+  - `stack_cluster` `{stack, count, share}`: one stack covers at least 25 % of a room of 8+; suggest a table or zone for it.
+  - `mostly_junior` `{share}`: at least half the room has under 2 years of experience.
+  - `no_pair` `{count, goal}`: attendees with nobody of the reciprocal goal; `goal` is the most common such goal.
+  - `cofounder_thin` `{count}`: only 1–2 people look for a cofounder.
+  - `few_registered` `{count}`: fewer than 10 registrations.
+
 The organizer report (`GET /api/events/{event_id}/report`) also carries `"telegram": { "on": bool, "linked": int }` (bot enabled, attendees linked to it) so the admin UI can enable the "Send results to Telegram" button.
 
 ### GitHub prefill (public)

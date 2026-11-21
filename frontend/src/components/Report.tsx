@@ -5,11 +5,11 @@ import type { EventReport, Goal } from "../types";
 import { Button } from "./ui";
 import { GoalBars } from "./RoomMap";
 
-const PAIRS: [Goal, Goal][] = [
+export const PAIRS: [Goal, Goal][] = [
   ["find_job", "hire"],
   ["find_mentor", "be_mentor"],
 ];
-const SOLO: Goal[] = ["find_cofounder", "exchange_experience"];
+export const SOLO: Goal[] = ["find_cofounder", "exchange_experience"];
 
 const hhmm = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
 
@@ -54,7 +54,7 @@ function JoinedChart({ t, data }: { t: Dict; data: EventReport["timeline"] }) {
 }
 
 /** Two-sided bar: who seeks (left) against who offers (right). */
-function Pair({ t, a, b, counts }: { t: Dict; a: Goal; b: Goal; counts: Map<Goal, number> }) {
+export function Pair({ t, a, b, counts }: { t: Dict; a: Goal; b: Goal; counts: Map<Goal, number> }) {
   const na = counts.get(a) ?? 0;
   const nb = counts.get(b) ?? 0;
   const max = Math.max(1, na, nb);

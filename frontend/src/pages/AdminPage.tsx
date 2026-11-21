@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, ApiError } from "../api";
 import { GoalBars } from "../components/RoomMap";
 import { ReportPanel } from "../components/Report";
+import { ForecastPanel } from "../components/Forecast";
 import { TagInput } from "../components/TagInput";
 import { Avatar, Button, GoalBadge, Segmented, Spinner } from "../components/ui";
 import type { Dict } from "../i18n";
@@ -384,7 +385,7 @@ function AdminEvent({ t, role, eventId, go }: { t: Dict; role: Role; eventId: st
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [view, setView] = useState<"people" | "report">("people");
+  const [view, setView] = useState<"people" | "forecast" | "report">("people");
   const [editing, setEditing] = useState(false);
   const { copied, copy } = useCopy();
 
@@ -496,11 +497,13 @@ function AdminEvent({ t, role, eventId, go }: { t: Dict; role: Role; eventId: st
           onChange={setView}
           options={[
             { value: "people", label: t.adminTabPeople },
+            { value: "forecast", label: t.adminTabForecast },
             { value: "report", label: t.adminTabReport },
           ]}
         />
       </div>
 
+      {view === "forecast" && <ForecastPanel t={t} eventId={eventId} />}
       {view === "report" && <ReportPanel t={t} eventId={eventId} />}
 
       <div className="admin-layout" hidden={view !== "people"}>

@@ -170,6 +170,7 @@
 .insights li { padding: var(--sp-3); border-radius: var(--radius-sm); background: var(--surface-2); border-left: 3px solid var(--meet); line-height: 1.45; }
 .insights li[data-code="top_location"] { border-left-color: var(--accent); }
 .rep-locs { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-3); }
+.rep-locs .bar-track { display: block; }
 .rep-loc-row { display: flex; justify-content: space-between; gap: var(--sp-3); align-items: baseline; flex-wrap: wrap; margin-bottom: 4px; font-size: var(--fs-sm); }
 .connectors { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2) var(--sp-4); }
 @media (max-width: 720px) { .connectors { grid-template-columns: 1fr; } }

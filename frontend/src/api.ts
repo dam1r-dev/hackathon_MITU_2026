@@ -2,6 +2,7 @@ import { adminSession, session } from "./session";
 import type {
   Attendee,
   EventInfo,
+  EventForecast,
   EventReport,
   InMinutes,
   LiveFeed,
@@ -126,6 +127,7 @@ export const api = {
   addAttendee: (id: string, body: { member_id: string } | { profile: ProfileIn }) => post<Attendee>(`/api/events/${id}/attendees`, body),
   removeAttendee: (id: string, memberId: string) => send<void>("DELETE", `/api/events/${id}/attendees/${memberId}`),
   report: (id: string) => get<EventReport>(`/api/events/${id}/report`),
+  forecast: (id: string) => get<EventForecast>(`/api/events/${id}/forecast`),
   telegramSummary: (id: string) => post<TelegramSummaryResult>(`/api/events/${id}/telegram-summary`, {}),
   stats: (id: string) => get<EventStats>(`/api/events/${id}/stats`),
   members: () => get<MemberOut[]>("/api/members"),

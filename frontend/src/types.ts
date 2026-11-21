@@ -221,3 +221,26 @@ export interface TelegramSummaryResult {
   sent: number;
   linked: number;
 }
+
+/** GET /api/events/{id}/forecast: who registered so far and tips for the organizer. */
+export type RoleFamily = "backend" | "frontend" | "mobile" | "data" | "devops" | "design" | "product" | "qa" | "security" | "management" | "other";
+export type Level = "junior" | "middle" | "senior" | "lead";
+export type ForecastTip =
+  | { code: "scarce_supply"; params: { scarce: Goal; plenty: Goal; scarce_count: number; plenty_count: number } }
+  | { code: "stack_gap"; params: { stack: string; seekers: number; hirers: number } }
+  | { code: "stack_cluster"; params: { stack: string; count: number; share: number } }
+  | { code: "mostly_junior"; params: { share: number } }
+  | { code: "no_pair"; params: { count: number; goal: Goal } }
+  | { code: "cofounder_thin"; params: { count: number } }
+  | { code: "few_registered"; params: { count: number } };
+
+export interface EventForecast {
+  attendees: number;
+  by_goal: { goal: Goal; count: number }[];
+  stacks: { name: string; count: number }[];
+  roles: { name: RoleFamily; count: number }[];
+  levels: { name: Level; count: number }[];
+  langs: { name: Lang; count: number }[];
+  pairs: { with_pair: number; without_pair: number; without_by_goal: { goal: Goal; count: number }[] };
+  tips: ForecastTip[];
+}
