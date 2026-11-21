@@ -1,0 +1,4 @@
+# Only for the offline scripts and tests, not needed by the running backend.
+-r ../requirements.txt
+anthropic
+pytest
