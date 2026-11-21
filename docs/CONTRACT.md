@@ -33,6 +33,13 @@ Reciprocity (who should be shown to whom):
 }
 ```
 
+- `wanted_role` (optional string, max 80): only for goal `hire`. Employers describe the vacancy, not themselves:
+  `wanted_role` = who they need ("Junior frontend developer"), `stack` = required skills, `experience_years` = minimum
+  experience required, `about` = about the vacancy, `role` = the employer's own title/company ("HR, Kaspi").
+  Old profiles without it fall back to `role`. Matching embeds the vacancy for `hire`, and an employer scores a
+  candidate lower when the candidate has less experience than required (factor `max(0.4, 1 - 0.2 * gap)`).
+  Texts: a job seeker sees `they_give` = "Vacancy: <wanted_role> · <skills> · from N yr"; an employer sees
+  "<name> fits your vacancy «<wanted_role>». Has: <matched skills>. Experience: <N>, you need from <M>."
 - `lang`: `kk` | `ru` | `en`. All names are fictional. No real people.
 - Dataset file: `data/profiles.json` (array of Profile). Minimum 100 profiles.
 

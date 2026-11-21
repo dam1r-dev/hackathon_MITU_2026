@@ -67,6 +67,17 @@ export type Dict = {
   interests: string;
   about: string;
   aboutHint: string;
+  roleHire: string;
+  roleHirePlaceholder: string;
+  wantedRole: string;
+  wantedRolePlaceholder: string;
+  stackHire: string;
+  experienceHire: string;
+  fromYears: (n: number) => string;
+  aboutHire: string;
+  aboutHireHint: string;
+  hiringBadge: string;
+  valueCards: { title: string; text: string }[];
   goal: string;
   required: string;
   submit: string;
@@ -290,6 +301,21 @@ const en: Dict = {
   interests: "Interests",
   about: "About you",
   aboutHint: "1-3 sentences: what you work on and what you are looking for.",
+  roleHire: "Your position / company",
+  roleHirePlaceholder: "HR, Kaspi.kz",
+  wantedRole: "Who do you need?",
+  wantedRolePlaceholder: "Junior frontend developer",
+  stackHire: "Required skills",
+  experienceHire: "Minimum experience",
+  fromYears: (n) => (n === 0 ? "any" : `from ${n} ${n === 1 ? "year" : "years"}`),
+  aboutHire: "About the vacancy",
+  aboutHireHint: "Remote/office, salary range, what the person will do",
+  hiringBadge: "Hiring",
+  valueCards: [
+    { title: "From QR to handshake in 3 minutes", text: "Scan the code, spend 60 seconds on the form, and get 5 people worth approaching, each with a ready first line." },
+    { title: "Mutual benefit only", text: "Job seekers see who is hiring and the other way round. A contact opens only when the interest is mutual, so there is no spam." },
+    { title: "Networking in the real room", text: "See who is at the buffet or by the stage right now. Agree on a meeting in one tap, and the organizer gets a report on how many connections happened." },
+  ],
   goal: "Your goal for today",
   required: "Required",
   submit: "Find my 5 people",
@@ -527,6 +553,21 @@ const ru: Dict = {
   interests: "Интересы",
   about: "О себе",
   aboutHint: "1-3 предложения: чем занимаетесь и кого ищете.",
+  roleHire: "Ваша должность / компания",
+  roleHirePlaceholder: "HR, Kaspi.kz",
+  wantedRole: "Кого вы ищете?",
+  wantedRolePlaceholder: "Junior frontend-разработчик",
+  stackHire: "Требуемые навыки",
+  experienceHire: "Минимальный опыт",
+  fromYears: (n) => (n === 0 ? "любой" : `от ${n} ${n % 10 === 1 && n % 100 !== 11 ? "года" : "лет"}`),
+  aboutHire: "О вакансии",
+  aboutHireHint: "Удалённо/офис, вилка зарплаты, чем будет заниматься человек",
+  hiringBadge: "Ищем",
+  valueCards: [
+    { title: "От QR до рукопожатия за 3 минуты", text: "Сканируете код, 60 секунд на анкету — и вот 5 человек, ради которых стоит подойти, с готовой первой фразой." },
+    { title: "Только взаимная польза", text: "Ищущий работу видит тех, кто нанимает, и наоборот. Контакт открывается, только когда интерес взаимный — без спама." },
+    { title: "Нетворкинг в реальном зале", text: "Видно, кто сейчас в буфете или у сцены. Договоритесь о встрече в один тап, а организатор получит отчёт, сколько знакомств случилось." },
+  ],
   goal: "Ваша цель сегодня",
   required: "Обязательное поле",
   submit: "Найти 5 человек",
@@ -759,6 +800,21 @@ const kk: Dict = {
   interests: "Қызығушылықтар",
   about: "Өзіңіз туралы",
   aboutHint: "1-3 сөйлем: немен айналысасыз және кімді іздейсіз.",
+  roleHire: "Сіздің лауазымыңыз / компания",
+  roleHirePlaceholder: "HR, Kaspi.kz",
+  wantedRole: "Кімді іздейсіз?",
+  wantedRolePlaceholder: "Junior frontend әзірлеушісі",
+  stackHire: "Қажетті дағдылар",
+  experienceHire: "Ең төменгі тәжірибе",
+  fromYears: (n) => (n === 0 ? "маңызды емес" : `${n} жылдан`),
+  aboutHire: "Вакансия туралы",
+  aboutHireHint: "Қашықтан/кеңседе, жалақы аралығы, адам немен айналысады",
+  hiringBadge: "Іздейді",
+  valueCards: [
+    { title: "QR-дан қол алысуға дейін 3 минут", text: "Кодты сканерлейсіз, сауалнамаға 60 секунд жұмсайсыз, сонда дайын алғашқы сөйлемі бар, жақындауға тұрарлық 5 адамды көресіз." },
+    { title: "Тек өзара пайда", text: "Жұмыс іздеуші жалдайтындарды көреді, керісінше де солай. Байланыс тек қызығушылық өзара болғанда ашылады, спам жоқ." },
+    { title: "Нақты залдағы нетворкинг", text: "Қазір кімнің буфетте немесе сахна жанында екені көрінеді. Кездесуді бір түртумен келісіңіз, ал ұйымдастырушы қанша танысу болғаны туралы есеп алады." },
+  ],
   goal: "Бүгінгі мақсатыңыз",
   required: "Міндетті өріс",
   submit: "5 адамды табу",

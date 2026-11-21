@@ -33,6 +33,8 @@ class ProfileIn(BaseModel):
     about: str = ""
     goal: Goal
     lang: Lang = "ru"
+    # Goal "hire" only: who the employer needs (the vacancy title). Old profiles fall back to `role`.
+    wanted_role: str | None = Field(default=None, max_length=80)
 
 
 class Profile(ProfileIn):

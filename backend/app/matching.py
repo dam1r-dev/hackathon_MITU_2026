@@ -6,6 +6,7 @@ fit(X->Y) is 0 unless Y's goal is the reciprocal of X's goal. Otherwise it is
 base similarity (embedding cosine, stack overlap, interest overlap) times a goal factor:
   - find_mentor / be_mentor: the mentor must have more experience than the mentee
   - find_cofounder: different stacks are better (complementary skills)
+  - hire (employer judging a candidate): the candidate's experience vs the required minimum
   - other goals: factor 1
 The goal factor is what makes the two directions differ.
 """
@@ -32,6 +33,8 @@ TOP_N = 5
 
 
 def profile_text(p: ProfileIn) -> str:
+    if p.goal == "hire":  # the vacancy, not the employer
+        return f"{p.wanted_role or p.role}. {', '.join(p.stack)}. {', '.join(p.interests)}. {p.about}"
     return f"{p.role}. {', '.join(p.stack)}. {', '.join(p.interests)}. {p.about}"
 
 
@@ -63,6 +66,8 @@ def _goal_factor(x: Subject, y: Subject) -> float:
         return 0.35 if gap <= 0 else min(1.0, 0.55 + 0.15 * gap)
     if x.goal == "find_cofounder":
         return 0.6 + 0.4 * (1.0 - _jaccard(x.stack, y.stack))
+    if x.goal == "hire" and y.goal == "find_job":
+        return 1.0 if y.exp >= x.exp else max(0.4, 1.0 - 0.2 * (x.exp - y.exp))
     return 1.0
 
 
@@ -194,9 +199,24 @@ class Index:
     # ---- text
     def _texts(self, viewer: ProfileIn, other: Profile, lang: str, viewer_id: str | None, shared: list[str]) -> dict:
         g = texts.GOAL[lang]
+        explanation = texts.FRAME[lang].format(my=g[viewer.goal], name=other.name, their=g[other.goal]) + (
+            texts.SHARED[lang].format(tags=", ".join(shared)) if shared else ""
+        )
+        if viewer.goal == "hire" and other.goal == "find_job":
+            has = [s for s in viewer.stack if s.lower() in {x.lower() for x in other.stack}]
+            vacancy = viewer.wanted_role or viewer.role
+            if has or not viewer.stack:
+                explanation = texts.FITS_VACANCY[lang].format(name=other.name, role=vacancy)
+                if has:
+                    explanation += texts.HAS_SKILLS[lang].format(skills=", ".join(has))
+            else:
+                explanation = texts.SEEKS_JOB[lang].format(name=other.name, their_role=other.role, role=vacancy)
+            if viewer.experience_years > 0 or other.experience_years > 0:
+                explanation += texts.EXP_LINE[lang].format(
+                    have=texts.years(lang, other.experience_years), need=viewer.experience_years
+                )
         out = {
-            "explanation": texts.FRAME[lang].format(my=g[viewer.goal], name=other.name, their=g[other.goal])
-            + (texts.SHARED[lang].format(tags=", ".join(shared)) if shared else ""),
+            "explanation": explanation,
             "you_give": self._offer(viewer, lang),
             "they_give": self._offer(other, lang),
             "icebreaker": (
@@ -214,6 +234,13 @@ class Index:
 
     @staticmethod
     def _offer(p: ProfileIn, lang: str) -> str:
+        if p.goal == "hire" and (p.wanted_role or "").strip():
+            line = texts.VACANCY[lang].format(role=p.wanted_role.strip())
+            if p.stack:
+                line += " · " + ", ".join(p.stack[:4])
+            if p.experience_years > 0:
+                line += " · " + texts.FROM_YEARS[lang].format(n=p.experience_years)
+            return line
         stack = ", ".join(p.stack[:3]) or p.role
         return texts.OFFER[lang][p.goal].format(stack=stack, years=texts.years(lang, p.experience_years))
 

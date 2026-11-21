@@ -27,6 +27,8 @@ export interface ProfileIn {
   about: string;
   goal: Goal;
   lang: Lang;
+  /** Goal "hire": who the employer needs (vacancy title). stack/experience_years/about then describe the vacancy. */
+  wanted_role?: string | null;
 }
 
 export interface Profile extends ProfileIn {

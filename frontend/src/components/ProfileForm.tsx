@@ -18,6 +18,18 @@ export const EXAMPLE: ProfileIn = {
   lang: "ru",
 };
 
+export const HIRE_EXAMPLE: ProfileIn = {
+  name: "Dana Karimova",
+  role: "HR, Kaspi.kz",
+  wanted_role: "Junior frontend developer",
+  stack: ["React", "TypeScript"],
+  experience_years: 1,
+  interests: ["fintech"],
+  about: "Office in Almaty, hybrid. Junior role: building the web cabinet, mentor in the team.",
+  goal: "hire",
+  lang: "ru",
+};
+
 type Props = {
   t: Dict;
   value: ProfileIn;
@@ -34,7 +46,8 @@ type Props = {
 export function ProfileForm({ t, value, onChange, onSubmit, loading, children, submitLabel, hideExample }: Props) {
   const [touched, setTouched] = useState(false);
   const set = <K extends keyof ProfileIn>(k: K, v: ProfileIn[K]) => onChange({ ...value, [k]: v });
-  const missing = { name: !value.name.trim(), role: !value.role.trim() };
+  const hire = value.goal === "hire";
+  const missing = { name: !value.name.trim(), role: !value.role.trim(), wanted: hire && !(value.wanted_role ?? "").trim() };
 
   return (
     <form
@@ -43,15 +56,15 @@ export function ProfileForm({ t, value, onChange, onSubmit, loading, children, s
       onSubmit={(e) => {
         e.preventDefault();
         setTouched(true);
-        if (missing.name || missing.role) {
-          document.getElementById(missing.name ? "f-name" : "f-role")?.focus();
+        if (missing.name || missing.role || missing.wanted) {
+          document.getElementById(missing.name ? "f-name" : missing.role ? "f-role" : "f-wanted")?.focus();
           return;
         }
         onSubmit();
       }}
     >
       {!hideExample && (
-        <Button type="button" variant="link" onClick={() => onChange({ ...EXAMPLE, lang: value.lang })}>
+        <Button type="button" variant="link" onClick={() => onChange({ ...(hire ? HIRE_EXAMPLE : EXAMPLE), lang: value.lang })}>
           ✦ {t.example}
         </Button>
       )}
@@ -85,12 +98,12 @@ export function ProfileForm({ t, value, onChange, onSubmit, loading, children, s
         </div>
         <div className="field">
           <label className="field-label" htmlFor="f-role">
-            {t.role}
+            {hire ? t.roleHire : t.role}
           </label>
           <input
             id="f-role"
             autoComplete="organization-title"
-            placeholder={t.rolePlaceholder}
+            placeholder={hire ? t.roleHirePlaceholder : t.rolePlaceholder}
             aria-invalid={touched && missing.role}
             value={value.role}
             onChange={(e) => set("role", e.target.value)}
@@ -99,16 +112,34 @@ export function ProfileForm({ t, value, onChange, onSubmit, loading, children, s
         </div>
       </div>
 
+      {hire && (
+        <div className="field">
+          <label className="field-label" htmlFor="f-wanted">
+            {t.wantedRole}
+          </label>
+          <input
+            id="f-wanted"
+            maxLength={80}
+            placeholder={t.wantedRolePlaceholder}
+            aria-invalid={touched && missing.wanted}
+            value={value.wanted_role ?? ""}
+            onChange={(e) => set("wanted_role", e.target.value)}
+          />
+          {touched && missing.wanted && <span className="field-error">{t.required}</span>}
+        </div>
+      )}
+
       <div className="field">
         <label className="field-label" htmlFor="f-stack">
-          {t.stack}
+          {hire ? t.stackHire : t.stack}
         </label>
         <TagInput id="f-stack" value={value.stack} onChange={(v) => set("stack", v)} suggestions={STACK_SUGGESTIONS} placeholder={t.tagHint} />
       </div>
 
       <div className="field">
         <label className="field-label" htmlFor="f-exp">
-          {t.experience}: <strong>{t.years(value.experience_years)}</strong>
+          {hire ? t.experienceHire : t.experience}:{" "}
+          <strong>{hire ? t.fromYears(value.experience_years) : t.years(value.experience_years)}</strong>
         </label>
         <input
           id="f-exp"
@@ -129,9 +160,9 @@ export function ProfileForm({ t, value, onChange, onSubmit, loading, children, s
 
       <div className="field">
         <label className="field-label" htmlFor="f-about">
-          {t.about}
+          {hire ? t.aboutHire : t.about}
         </label>
-        <textarea id="f-about" rows={3} maxLength={400} placeholder={t.aboutHint} value={value.about} onChange={(e) => set("about", e.target.value)} />
+        <textarea id="f-about" rows={3} maxLength={400} placeholder={hire ? t.aboutHireHint : t.aboutHint} value={value.about} onChange={(e) => set("about", e.target.value)} />
       </div>
 
       {children}

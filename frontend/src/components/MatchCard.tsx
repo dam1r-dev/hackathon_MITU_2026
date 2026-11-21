@@ -43,6 +43,11 @@ export function MatchCard({ t, m, rank, busy, onFeedback, meet, meetNow, isNew }
           <div className="muted">
             {p.role} · {t.years(p.experience_years)}
           </div>
+          {p.goal === "hire" && p.wanted_role && (
+            <div className="hiring-line">
+              {t.hiringBadge}: <strong>{p.wanted_role}</strong>
+            </div>
+          )}
           <GoalBadge goal={p.goal}>{t.goals[p.goal]}</GoalBadge>
           {m.kind === "similar" && <span className="similar-badge">{t.similarBadge}</span>}
           {m.location && (

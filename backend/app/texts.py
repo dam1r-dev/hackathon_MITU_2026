@@ -89,6 +89,28 @@ ICEBREAKER_ROLE = {
 }
 
 
+# Vacancy texts (goal "hire"): the employer describes who they need.
+VACANCY = {"en": "Vacancy: {role}", "ru": "Вакансия: {role}", "kk": "Вакансия: {role}"}
+FROM_YEARS = {"en": "from {n} yr", "ru": "от {n} г.", "kk": "{n} жылдан"}
+FITS_VACANCY = {
+    "en": "{name} fits your vacancy «{role}».",
+    "ru": "{name} подходит на вашу вакансию «{role}».",
+    "kk": "{name} сіздің «{role}» вакансияңызға сәйкес келеді.",
+}
+# Candidate without any required skill: say so honestly instead of "fits your vacancy".
+SEEKS_JOB = {
+    "en": "{name} is looking for a job ({their_role}); none of the required skills for «{role}» yet.",
+    "ru": "{name} ищет работу ({their_role}); нужных для «{role}» навыков пока нет.",
+    "kk": "{name} жұмыс іздеуде ({their_role}); «{role}» үшін қажетті дағдылар әзірге жоқ.",
+}
+HAS_SKILLS = {"en": " Has: {skills}.", "ru": " Есть: {skills}.", "kk": " Бар: {skills}."}
+EXP_LINE = {
+    "en": " Experience: {have}, you need from {need}.",
+    "ru": " Опыт: {have}, вам нужно от {need}.",
+    "kk": " Тәжірибе: {have}, сізге {need} жылдан керек.",
+}
+
+
 def years(lang: str, n: int) -> str:
     if lang == "ru":
         word = "лет"

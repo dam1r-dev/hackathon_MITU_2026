@@ -38,6 +38,18 @@ export function EventsHubPage({ t, go }: Props) {
         <p className="sub">{t.hubSub}</p>
       </header>
 
+      <section className="value-grid" aria-label={t.hubTitle}>
+        {t.valueCards.map((c, i) => (
+          <article key={i} className="card value-card">
+            <span className="value-num" aria-hidden="true">
+              {i + 1}
+            </span>
+            <h2>{c.title}</h2>
+            <p className="muted">{c.text}</p>
+          </article>
+        ))}
+      </section>
+
       <section className="card hub-code">
         <div className="who">
           <h2>{t.hubCodeTitle}</h2>

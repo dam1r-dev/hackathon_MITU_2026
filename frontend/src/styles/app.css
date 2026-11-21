@@ -546,3 +546,16 @@ select:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-co
   border: 1px dashed currentColor;
   opacity: 0.75;
 }
+
+/* ---------- Value block (home), hiring line ---------- */
+.value-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-3); margin-bottom: var(--sp-4); }
+@media (min-width: 720px) { .value-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.value-card { display: grid; gap: var(--sp-2); align-content: start; min-width: 0; }
+.value-card h2 { font-size: var(--fs-lg); line-height: 1.25; overflow-wrap: anywhere; }
+.value-card p { margin: 0; }
+.value-num {
+  display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: var(--radius-full);
+  background: var(--accent-soft); color: var(--accent); font-weight: var(--fw-bold); font-size: var(--fs-sm);
+}
+.hiring-line { font-size: var(--fs-sm); color: var(--text-dim); margin: 2px 0 var(--sp-1); overflow-wrap: anywhere; }
+.hiring-line strong { color: var(--text); font-weight: var(--fw-semibold); }
