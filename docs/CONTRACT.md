@@ -96,7 +96,7 @@ Errors: `401` no or unknown token, `403` signed in but not allowed. Body is `{"d
 
 ### Types
 ```json
-Event  { "id": "e_1a2b3c4d", "code": "YYZGW3", "title": "Qazaq IT Meetup", "date": "2026-12-01", "venue": "Almaty",
+Event  { "id": "e_1a2b3c4d", "code": "YYZGW3", "title": "Qazaq IT Meetup", "date": "2026-12-01", "start_time": "08:00", "end_time": "18:00", "venue": "Almaty",
          "status": "open|closed", "organizer_ids": ["m_..."], "created_at": "ISO", "attendee_count": 42,
          "locations": ["Актовый зал", "Буфет", "Сцена", "Балкон", "Вход"],
          "join_path": "/#/join/YYZGW3", "join_url": "http://<PUBLIC_URL>/#/join/YYZGW3" }
@@ -111,7 +111,7 @@ The frontend uses hash routing, so the join page is the route `#/join/<code>` (f
 |---|---|
 | `GET /api/events/by-code/{code}` | Event info for the landing page |
 | `GET /api/events/by-code/{code}/qr.svg` | QR code image (SVG) of `join_url` |
-| `GET /api/events/open` | Home page list of OPEN events, newest first: `[{ "code", "title", "date", "venue", "attendee_count" }]` (no organizer ids) |
+| `GET /api/events/open` | Home page list of OPEN events, newest first: `[{ "code", "title", "date", "start_time", "end_time", "venue", "attendee_count" }]` (no organizer ids) |
 | `GET /api/events/by-code/{code}/stats` | Goal statistics for the member "Room" tab: `{ "attendees", "by_goal": [{goal, count}] }`, no member data |
 | `GET /api/events/by-code/{code}/locations` | Live venue counts `[{ "name", "count" }]` in the event's order; counts presence updated within the last 90 minutes |
 | `GET /api/events/by-code/{code}/graph` | Room map for the projector. Same shape as `/api/graph`, only this event's attendees, `name` shortened to initials |
@@ -155,8 +155,8 @@ Organizer rights apply only to events where the member is listed in `organizer_i
 | Method and path | Who | Purpose |
 |---|---|---|
 | `GET /api/events` | admin, organizer (own events) | List events, newest first |
-| `POST /api/events` | admin | Create. Body `{ "title", "date", "venue", "code"?, "organizer_ids"? }`. Code is generated when omitted (6 letters and digits) |
-| `PATCH /api/events/{event_id}` | admin, organizer | Change `title`, `date`, `venue`, `status`, `locations` (1 to 12 unique non-empty names, max 40 chars each, else 422). `organizer_ids` only by admin |
+| `POST /api/events` | admin | Create. Body `{ "title", "date", "start_time"?, "end_time"?, "venue", "code"?, "organizer_ids"? }`. Code is generated when omitted (6 letters and digits) |
+| `PATCH /api/events/{event_id}` | admin, organizer | Change `title`, `date`, `start_time`, `end_time` (`"HH:MM"` 24h, Almaty time UTC+5, or `null` to clear; bad format or end not after start gives `422 bad_time`; old events have `null`), `venue`, `status`, `locations` (1 to 12 unique non-empty names, max 40 chars each, else 422). `organizer_ids` only by admin |
 | `DELETE /api/events/{event_id}` | admin | Delete the event (members stay) |
 | `GET /api/events/{event_id}/attendees` | admin, organizer | `Attendee[]` |
 | `POST /api/events/{event_id}/attendees` | admin, organizer | Add `{ "member_id" }` or create `{ "profile": ProfileIn }` |
@@ -177,7 +177,7 @@ Errors: `404 github_not_found`, `503 github_rate_limited` (GitHub 403/429), `503
 
 ### Seed events (optional, `data/events.json`)
 Read once, on the first start with no saved state. A list (or `{ "events": [...] }`) of
-`{ "title", "date"?, "venue"?, "code"?, "status"?, "attendees": ["p_001", ...] or "all" }`.
+`{ "title", "date"?, "start_time"?, "end_time"?, "venue"?, "code"?, "status"?, "attendees": ["p_001", ...] or "all" }`.
 Without the file the backend creates one event with code `DEMO` containing every profile.
 
 ### Persistence

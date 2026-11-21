@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ApiError } from "../api";
+import { AddToCalendar } from "../components/AddToCalendar";
+import { eventCal, eventWhen } from "../eventTime";
 import { ContactValue, MatchCard } from "../components/MatchCard";
 import { MeetingsStrip, MeetSheet, Toast } from "../components/Meetings";
 import { TelegramConnect } from "../components/TelegramConnect";
@@ -252,10 +254,11 @@ export function EventPage({ t, lang, code, go }: Props) {
         {event && (
           <div className="event-meta">
             <span className="badge-code mono">{event.code}</span>
-            {event.title}
+            {[event.title, eventWhen(event, lang)].filter(Boolean).join(" · ")}
           </div>
         )}
         <h1>{t.eventResults}</h1>
+        {event && eventCal(event) && <AddToCalendar event={eventCal(event)!} />}
         <p className="live">
           <span className="live-dot" /> {t.liveUpdates}
           {matches && <span className="mono"> · {t.tookMs(tookMs)}</span>}

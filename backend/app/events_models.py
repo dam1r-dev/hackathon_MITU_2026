@@ -12,6 +12,8 @@ EventStatus = Literal["open", "closed"]
 class EventIn(BaseModel):
     title: str = Field(min_length=1, max_length=120)
     date: str = ""
+    start_time: str | None = None  # "HH:MM", Almaty local time
+    end_time: str | None = None
     venue: str = ""
     code: str | None = Field(default=None, min_length=4, max_length=12)  # generated when omitted
     organizer_ids: list[str] = Field(default_factory=list)
@@ -20,6 +22,8 @@ class EventIn(BaseModel):
 class EventPatch(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=120)
     date: str | None = None
+    start_time: str | None = None  # null clears
+    end_time: str | None = None
     venue: str | None = None
     status: EventStatus | None = None
     organizer_ids: list[str] | None = None
@@ -48,6 +52,8 @@ class Event(BaseModel):
     code: str
     title: str
     date: str
+    start_time: str | None = None
+    end_time: str | None = None
     venue: str
     status: EventStatus
     organizer_ids: list[str]
@@ -149,6 +155,8 @@ class OpenEvent(BaseModel):
     code: str
     title: str
     date: str
+    start_time: str | None = None
+    end_time: str | None = None
     venue: str
     attendee_count: int
 

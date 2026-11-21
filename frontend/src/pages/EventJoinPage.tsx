@@ -1,3 +1,5 @@
+import { AddToCalendar } from "../components/AddToCalendar";
+import { eventCal, eventWhen } from "../eventTime";
 import { useEffect, useState } from "react";
 import { api, ApiError } from "../api";
 import { ProfileForm } from "../components/ProfileForm";
@@ -89,11 +91,12 @@ export function EventJoinPage({ t, lang, code, go }: Props) {
       <header className="hero">
         <div className="event-meta">
           <span className="badge-code mono">{event.code}</span>
-          {[event.date, event.venue].filter(Boolean).join(" · ")}
+          {eventWhen(event, lang)}
           <span className="muted">· {t.attendees(event.attendee_count)}</span>
         </div>
         <h1>{event.title}</h1>
         <p className="sub">{t.eventJoinSub}</p>
+        {eventCal(event) && <AddToCalendar event={eventCal(event)!} />}
       </header>
 
       {closed && <p className="alert">{t.eventClosed}</p>}

@@ -118,8 +118,8 @@ export const api = {
   eventPin: (code: string) => get<{ pin: string; expires_in: number }>(`${ev(code)}/pin`),
   resolvePin: (pin: string) => post<{ code: string }>("/api/pin", { pin }),
   events: () => get<EventInfo[]>("/api/events"),
-  createEvent: (body: { title: string; date: string; venue: string; code?: string }) => post<EventInfo>("/api/events", body),
-  patchEvent: (id: string, body: Partial<Pick<EventInfo, "title" | "date" | "venue" | "status" | "locations">>) =>
+  createEvent: (body: { title: string; date: string; start_time?: string | null; end_time?: string | null; venue: string; code?: string }) => post<EventInfo>("/api/events", body),
+  patchEvent: (id: string, body: Partial<Pick<EventInfo, "title" | "date" | "start_time" | "end_time" | "venue" | "status" | "locations">>) =>
     send<EventInfo>("PATCH", `/api/events/${id}`, body),
   deleteEvent: (id: string) => send<void>("DELETE", `/api/events/${id}`),
   attendees: (id: string) => get<Attendee[]>(`/api/events/${id}/attendees`),

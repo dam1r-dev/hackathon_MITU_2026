@@ -29,7 +29,7 @@ def test_open_events_hide_closed(client):
     items = r.json()
     codes = {e["code"] for e in items}
     assert "DEMO" in codes and "STARTUP" not in codes
-    assert set(items[0]) == {"code", "title", "date", "venue", "attendee_count"}
+    assert set(items[0]) == {"code", "title", "date", "start_time", "end_time", "venue", "attendee_count"}
 
 
 def test_default_locations_and_patch_validation(client):
@@ -121,3 +121,24 @@ def test_patch_me_rejects_dataset_profiles(client):
     r = client.patch("/api/me", headers={"X-Member-Token": "dataset-token"}, json={"profile": SEEKER})
     assert r.status_code == 403
     del ctx.state.data["tokens"]["dataset-token"]
+
+
+def test_event_times(client):
+    admin = _admin(client)
+    r = client.post("/api/events", headers=admin, json={"title": "T", "date": "2026-11-21",
+                                                         "start_time": "08:00", "end_time": "18:00"})
+    assert r.status_code == 201
+    e = r.json()
+    assert (e["start_time"], e["end_time"]) == ("08:00", "18:00")
+    assert _event(client)["start_time"] is None
+    url = f"/api/events/{e['id']}"
+    r = client.patch(url, headers=admin, json={"start_time": "09:30"})
+    assert r.status_code == 200 and r.json()["start_time"] == "09:30" and r.json()["end_time"] == "18:00"
+    assert client.patch(url, headers=admin, json={"end_time": "09:00"}).json()["detail"] == "bad_time"
+    assert client.patch(url, headers=admin, json={"start_time": "25:00"}).status_code == 422
+    r = client.patch(url, headers=admin, json={"end_time": None})
+    assert r.json()["end_time"] is None
+    bad = client.post("/api/events", headers=admin, json={"title": "B", "start_time": "10:00", "end_time": "10:00"})
+    assert bad.status_code == 422 and bad.json()["detail"] == "bad_time"
+    opened = {x["code"]: x for x in client.get("/api/events/open").json()}
+    assert opened[e["code"]]["start_time"] == "09:30"

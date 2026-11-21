@@ -79,6 +79,8 @@ export interface EventInfo {
   code: string;
   title: string;
   date: string;
+  start_time: string | null;
+  end_time: string | null;
   venue: string;
   status: "open" | "closed";
   organizer_ids: string[];
@@ -130,6 +132,8 @@ export interface OpenEvent {
   code: string;
   title: string;
   date: string;
+  start_time: string | null;
+  end_time: string | null;
   venue: string;
   attendee_count: number;
 }

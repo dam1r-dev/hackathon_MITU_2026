@@ -127,6 +127,17 @@ def _attendee_ids(event_id: str) -> set[str]:
     return set(ctx.state.data["attendees"].get(event_id, []))
 
 
+_TIME_RE = re.compile(r"([01]\d|2[0-3]):[0-5]\d")
+
+
+def _check_times(start: str | None, end: str | None) -> None:
+    for t in (start, end):
+        if t is not None and not _TIME_RE.fullmatch(t):
+            raise HTTPException(422, "bad_time")
+    if start and end and end <= start:
+        raise HTTPException(422, "bad_time")
+
+
 def event_out(e: dict) -> Event:
     known = {p.id for p in ctx.index.profiles}
     count = sum(1 for m in ctx.state.data["attendees"].get(e["id"], []) if m in known)
@@ -220,6 +231,7 @@ def list_events(a: Auth = Depends(auth)) -> list[Event]:
 @router.post("/events", response_model=Event, status_code=201)
 def create_event(req: EventIn, a: Auth = Depends(auth)) -> Event:
     need_admin(a)
+    _check_times(req.start_time, req.end_time)
     st = ctx.state
     with st.lock:
         code = (req.code or st.new_code()).upper()
@@ -235,6 +247,8 @@ def create_event(req: EventIn, a: Auth = Depends(auth)) -> Event:
             "code": code,
             "title": req.title.strip(),
             "date": req.date,
+            "start_time": req.start_time or None,
+            "end_time": req.end_time or None,
             "venue": req.venue,
             "status": "open",
             "organizer_ids": req.organizer_ids,
@@ -255,7 +269,7 @@ def open_events() -> list[OpenEvent]:
     out = []
     for e in events:
         o = event_out(e)
-        out.append(OpenEvent(code=o.code, title=o.title, date=o.date, venue=o.venue, attendee_count=o.attendee_count))
+        out.append(OpenEvent(code=o.code, title=o.title, date=o.date, start_time=o.start_time, end_time=o.end_time, venue=o.venue, attendee_count=o.attendee_count))
     return out
 
 
@@ -502,9 +516,15 @@ def patch_event(event_id: str, req: EventPatch, a: Auth = Depends(auth)) -> Even
     changes = req.model_dump(exclude_unset=True)
     if "organizer_ids" in changes:
         need_admin(a)
+    for k in ("start_time", "end_time"):
+        if changes.get(k) == "":
+            changes[k] = None
+    _check_times(changes.get("start_time", e.get("start_time")), changes.get("end_time", e.get("end_time")))
     with ctx.state.lock:
         for key, value in changes.items():
-            if value is not None:
+            if key in ("start_time", "end_time"):
+                e[key] = value
+            elif value is not None:
                 e[key] = value.strip() if key == "title" else value
         ctx.state.save()
     return event_out(e)

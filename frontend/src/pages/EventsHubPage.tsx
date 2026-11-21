@@ -1,4 +1,5 @@
 import { AddToCalendar } from "../components/AddToCalendar";
+import { eventCal, eventWhen } from "../eventTime";
 import { useEffect, useState } from "react";
 import { api } from "../api";
 import { Button, Spinner } from "../components/ui";
@@ -80,21 +81,11 @@ export function EventsHubPage({ t, go }: Props) {
               <div className="who">
                 <strong>{e.title}</strong>
                 <span className="muted">
-                  {[e.date, e.venue].filter(Boolean).join(" · ")}
-                  {[e.date, e.venue].some(Boolean) ? " · " : ""}
+                  {eventWhen(e)}
+                  {eventWhen(e) ? " · " : ""}
                   {t.attendees(e.attendee_count)}
                 </span>
-                {/^\d{4}-\d{2}-\d{2}$/.test(e.date ?? "") && (
-                  <AddToCalendar
-                    event={{
-                      title: e.title,
-                      start: new Date(`${e.date}T00:00:00`),
-                      allDay: true,
-                      location: e.venue || undefined,
-                      details: `${window.location.origin}/#/join/${e.code}`,
-                    }}
-                  />
-                )}
+                {eventCal(e) && <AddToCalendar event={eventCal(e)!} />}
               </div>
               {mine.has(e.code) ? (
                 <a className="btn btn-primary btn-sm" href={href({ name: "event", code: e.code })}>

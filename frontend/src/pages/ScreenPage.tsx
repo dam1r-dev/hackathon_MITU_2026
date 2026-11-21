@@ -1,3 +1,4 @@
+import { eventWhen } from "../eventTime";
 import { useEffect, useRef, useState } from "react";
 import { api, ApiError } from "../api";
 import { LiveCounter } from "../components/LiveCounter";
@@ -161,6 +162,7 @@ export function ScreenPage({ t, code, go }: Props) {
     <div className="screen">
       <section className="screen-join">
         <h1>{event?.title ?? "…"}</h1>
+        {event && eventWhen(event) && <p className="muted">{eventWhen(event)}</p>}
         <p className="screen-scan">{t.screenScan}</p>
         <div className="qr-frame">{event && <img src={api.eventQrUrl(event.code)} alt={event.join_url} />}</div>
         <p className="screen-code">

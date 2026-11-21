@@ -1,3 +1,4 @@
+import { eventWhen } from "../eventTime";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, ApiError } from "../api";
 import { GoalBars } from "../components/RoomMap";
@@ -191,10 +192,11 @@ function AdminEvents({ t, role }: { t: Dict; role: Role }) {
 }
 
 function CreateEvent({ t, onCancel, onCreated }: { t: Dict; onCancel: () => void; onCreated: () => void }) {
-  const [form, setForm] = useState({ title: "", date: "", venue: "", code: "" });
+  const [form, setForm] = useState({ title: "", date: "", start: "08:00", end: "18:00", venue: "", code: "" });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const codeOk = !form.code || /^[A-Za-z0-9]{4,12}$/.test(form.code);
+  const timesOk = !form.start || !form.end || form.end > form.start;
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, [k]: e.target.value });
 
   return (
@@ -202,13 +204,15 @@ function CreateEvent({ t, onCancel, onCreated }: { t: Dict; onCancel: () => void
       className="card form create-event"
       onSubmit={async (e) => {
         e.preventDefault();
-        if (!form.title.trim() || !codeOk) return;
+        if (!form.title.trim() || !codeOk || !timesOk) return;
         setBusy(true);
         setError(null);
         try {
           await api.createEvent({
             title: form.title.trim(),
             date: form.date,
+            start_time: form.start || null,
+            end_time: form.end || null,
             venue: form.venue.trim(),
             ...(form.code ? { code: form.code.toUpperCase() } : {}),
           });
@@ -240,6 +244,20 @@ function CreateEvent({ t, onCancel, onCreated }: { t: Dict; onCancel: () => void
           <input id="ev-venue" value={form.venue} onChange={set("venue")} placeholder="Almaty" />
         </div>
       </div>
+      <div className="row">
+        <div className="field">
+          <label className="field-label" htmlFor="ev-start">
+            {t.eventStart}
+          </label>
+          <input id="ev-start" type="time" value={form.start} onChange={set("start")} />
+        </div>
+        <div className="field">
+          <label className="field-label" htmlFor="ev-end">
+            {t.eventEnd}
+          </label>
+          <input id="ev-end" type="time" value={form.end} onChange={set("end")} aria-invalid={!timesOk} />
+        </div>
+      </div>
       <div className="field">
         <label className="field-label" htmlFor="ev-code">
           {t.eventCodeOpt}
@@ -266,7 +284,7 @@ function CreateEvent({ t, onCancel, onCreated }: { t: Dict; onCancel: () => void
         <Button type="button" variant="ghost" onClick={onCancel}>
           ✕
         </Button>
-        <Button type="submit" disabled={busy || !form.title.trim() || !codeOk}>
+        <Button type="submit" disabled={busy || !form.title.trim() || !codeOk || !timesOk}>
           {busy && <Spinner />} {t.createEvent}
         </Button>
       </div>
@@ -319,7 +337,7 @@ function EventCard({ t, e, role, onChange }: { t: Dict; e: EventInfo; role: Role
       </header>
       <h2>{e.title}</h2>
       <p className="muted">
-        {[e.date, e.venue].filter(Boolean).join(" · ") || "—"} · {t.attendees(e.attendee_count)}
+        {eventWhen(e) || "—"} · {t.attendees(e.attendee_count)}
       </p>
       <div className="event-actions no-print">
         <a className="btn btn-primary btn-sm" href={href({ name: "admin", code: e.id })}>
@@ -367,6 +385,7 @@ function AdminEvent({ t, role, eventId, go }: { t: Dict; role: Role; eventId: st
   const [query, setQuery] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [view, setView] = useState<"people" | "report">("people");
+  const [editing, setEditing] = useState(false);
   const { copied, copy } = useCopy();
 
   const load = useCallback(async () => {
@@ -423,7 +442,7 @@ function AdminEvent({ t, role, eventId, go }: { t: Dict; role: Role; eventId: st
             <div className="event-meta">
               <span className="badge-code mono">{event.code}</span>
               <StatusPill t={t} status={event.status} />
-              {[event.date, event.venue].filter(Boolean).join(" · ")}
+              {eventWhen(event)}
             </div>
           )}
           <h1>{event?.title ?? "…"}</h1>
@@ -445,9 +464,24 @@ function AdminEvent({ t, role, eventId, go }: { t: Dict; role: Role; eventId: st
             >
               {event.status === "open" ? t.closeReg : t.openReg}
             </Button>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setEditing((v) => !v)} aria-expanded={editing}>
+              ✎ {t.editEvent}
+            </Button>
           </div>
         )}
       </header>
+
+      {event && editing && (
+        <EditEvent
+          t={t}
+          event={event}
+          onCancel={() => setEditing(false)}
+          onSaved={() => {
+            setEditing(false);
+            load();
+          }}
+        />
+      )}
 
       {error && (
         <p className="alert" role="alert">
@@ -561,6 +595,94 @@ function AdminEvent({ t, role, eventId, go }: { t: Dict; role: Role; eventId: st
         </aside>
       </div>
     </>
+  );
+}
+
+function EditEvent({ t, event, onCancel, onSaved }: { t: Dict; event: EventInfo; onCancel: () => void; onSaved: () => void }) {
+  const [f, setF] = useState({
+    title: event.title,
+    date: event.date,
+    start: event.start_time ?? "",
+    end: event.end_time ?? "",
+    venue: event.venue,
+  });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const timesOk = !f.start || !f.end || f.end > f.start;
+  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => setF({ ...f, [k]: e.target.value });
+
+  return (
+    <form
+      className="card form create-event no-print"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        if (!f.title.trim() || !timesOk) return;
+        setBusy(true);
+        setError(null);
+        try {
+          await api.patchEvent(event.id, {
+            title: f.title.trim(),
+            date: f.date,
+            start_time: f.start || null,
+            end_time: f.end || null,
+            venue: f.venue.trim(),
+          });
+          onSaved();
+        } catch (err) {
+          setError(errText(t, err));
+          setBusy(false);
+        }
+      }}
+    >
+      <h2 className="card-title">{t.editEvent}</h2>
+      <div className="field">
+        <label className="field-label" htmlFor="ed-title">
+          {t.eventTitle}
+        </label>
+        <input id="ed-title" required maxLength={120} value={f.title} onChange={set("title")} />
+      </div>
+      <div className="row">
+        <div className="field">
+          <label className="field-label" htmlFor="ed-date">
+            {t.eventDate}
+          </label>
+          <input id="ed-date" type="date" value={f.date} onChange={set("date")} />
+        </div>
+        <div className="field">
+          <label className="field-label" htmlFor="ed-venue">
+            {t.eventVenue}
+          </label>
+          <input id="ed-venue" value={f.venue} onChange={set("venue")} />
+        </div>
+      </div>
+      <div className="row">
+        <div className="field">
+          <label className="field-label" htmlFor="ed-start">
+            {t.eventStart}
+          </label>
+          <input id="ed-start" type="time" value={f.start} onChange={set("start")} />
+        </div>
+        <div className="field">
+          <label className="field-label" htmlFor="ed-end">
+            {t.eventEnd}
+          </label>
+          <input id="ed-end" type="time" value={f.end} onChange={set("end")} aria-invalid={!timesOk} />
+        </div>
+      </div>
+      {error && (
+        <p className="alert" role="alert">
+          {error}
+        </p>
+      )}
+      <div className="form-actions">
+        <Button type="button" variant="ghost" onClick={onCancel}>
+          {t.cancel}
+        </Button>
+        <Button type="submit" disabled={busy || !f.title.trim() || !timesOk}>
+          {busy && <Spinner />} {t.saveProfile}
+        </Button>
+      </div>
+    </form>
   );
 }
 

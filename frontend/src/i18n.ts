@@ -156,6 +156,9 @@ export type Dict = {
   eventTitle: string;
   eventDate: string;
   eventVenue: string;
+  eventStart: string;
+  eventEnd: string;
+  editEvent: string;
   eventCodeOpt: string;
   eventCodeHint: string;
   codeTaken: string;
@@ -420,6 +423,9 @@ const en: Dict = {
   eventTitle: "Title",
   eventDate: "Date",
   eventVenue: "Venue",
+  eventStart: "Start",
+  eventEnd: "End",
+  editEvent: "Edit event",
   eventCodeOpt: "Join code (optional)",
   eventCodeHint: "4-12 Latin letters and digits. Generated if empty.",
   codeTaken: "This code is already used by another event.",
@@ -701,6 +707,9 @@ const ru: Dict = {
   eventTitle: "Название",
   eventDate: "Дата",
   eventVenue: "Место",
+  eventStart: "Начало",
+  eventEnd: "Конец",
+  editEvent: "Изменить",
   eventCodeOpt: "Код для входа (необязательно)",
   eventCodeHint: "4-12 латинских букв и цифр. Если пусто, создадим сами.",
   codeTaken: "Этот код уже занят другим мероприятием.",
@@ -977,6 +986,9 @@ const kk: Dict = {
   eventTitle: "Атауы",
   eventDate: "Күні",
   eventVenue: "Өтетін орны",
+  eventStart: "Басталуы",
+  eventEnd: "Аяқталуы",
+  editEvent: "Өзгерту",
   eventCodeOpt: "Кіру коды (міндетті емес)",
   eventCodeHint: "4-12 латын әрпі мен сан. Бос болса, өзіміз жасаймыз.",
   codeTaken: "Бұл код басқа іс-шарада қолданылған.",

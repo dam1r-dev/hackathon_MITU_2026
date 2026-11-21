@@ -59,6 +59,8 @@ def _seed_events(dataset_ids: list[str]) -> None:
             "code": (it.get("code") or st.new_code()).upper(),
             "title": it["title"],
             "date": it.get("date", ""),
+            "start_time": it.get("start_time"),
+            "end_time": it.get("end_time"),
             "venue": it.get("venue", ""),
             "status": it.get("status", "open"),
             "organizer_ids": [m for m in it.get("organizer_ids", []) if m in known],
