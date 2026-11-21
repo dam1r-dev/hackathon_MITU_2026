@@ -153,6 +153,14 @@ Organizer rights apply only to events where the member is listed in `organizer_i
 | `GET /api/members` | admin | All members with `events` (ids) |
 | `PATCH /api/members/{member_id}/role` `{ "role" }` | admin | Set `admin`, `organizer` or `member` |
 | `DELETE /api/members/{member_id}` | admin | Remove the member everywhere |
+| `POST /api/events/{event_id}/telegram-summary` | admin, organizer | Send every Telegram-linked attendee a personal results message in their profile language: people met (mutual pairs plus done meetings, deduped, up to 10 listed), contacts only for mutual pairs, "met at <location>" for done meetings, a thank-you; attendees with nothing get a friendly "no matches this time" line. Returns `{ "sent": n, "linked": m }`. `409 telegram_off` when the bot is off |
+
+The organizer report (`GET /api/events/{event_id}/report`) also carries `"telegram": { "on": bool, "linked": int }` (bot enabled, attendees linked to it) so the admin UI can enable the "Send results to Telegram" button.
+
+### GitHub prefill (public)
+`GET /api/github/{username}` fills a profile from a public GitHub account. Username must match `^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$` (else `422 bad_username`). Returns
+`{ "login", "name" (login when empty), "about" (bio or ""), "stack": top 6 languages by non-fork repo count, "interests": up to 5 most frequent repo topics, "experience_years": account age in years (0..20), "avatar_url", "repos": public_repos }`.
+Errors: `404 github_not_found`, `503 github_rate_limited` (GitHub 403/429), `503 github_unavailable` (network, timeout 6 s). Successful results are cached in memory for 10 minutes. The form hides this row for goal `hire`.
 
 ### Seed events (optional, `data/events.json`)
 Read once, on the first start with no saved state. A list (or `{ "events": [...] }`) of

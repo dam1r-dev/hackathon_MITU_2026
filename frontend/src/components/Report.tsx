@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api } from "../api";
+import { api, ApiError } from "../api";
 import type { Dict } from "../i18n";
 import type { EventReport, Goal } from "../types";
 import { Button } from "./ui";
@@ -89,6 +89,43 @@ function insightText(t: Dict, i: EventReport["insights"][number]): string {
   }
 }
 
+/** "Send results to Telegram": confirm, send, show the count. */
+function TelegramSend({ t, eventId, tg }: { t: Dict; eventId: string; tg?: { on: boolean; linked: number } }) {
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [off, setOff] = useState(false);
+  const disabled = off || (tg !== undefined && !tg.on);
+  const none = !disabled && tg !== undefined && tg.linked === 0;
+
+  const send = async () => {
+    if (!window.confirm(t.tgConfirm(tg?.linked ?? 0))) return;
+    setBusy(true);
+    setMsg("");
+    try {
+      const r = await api.telegramSummary(eventId);
+      setMsg(t.tgSent(r.sent));
+    } catch (e) {
+      if (e instanceof ApiError && e.detail === "telegram_off") setOff(true);
+      else setMsg(t.tgError);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="tg-send no-print">
+      <Button type="button" variant="ghost" size="sm" disabled={busy || disabled || none} onClick={() => void send()}>
+        ✈ {busy ? t.tgSending : t.tgSend}
+      </Button>
+      {(disabled || none || msg) && (
+        <span className="muted small" role="status">
+          {disabled ? t.tgOff : none ? t.tgNone : msg}
+        </span>
+      )}
+    </div>
+  );
+}
+
 /** Organizer report: KPIs, arrivals, goal balance, insights, venue and top connectors. Printable. */
 export function ReportPanel({ t, eventId }: { t: Dict; eventId: string }) {
   const [r, setR] = useState<EventReport | null>(null);
@@ -144,9 +181,12 @@ export function ReportPanel({ t, eventId }: { t: Dict; eventId: string }) {
           <h2>{t.repTitle}</h2>
           <p className="muted print-only">{t.repPrinted(new Date().toLocaleString())}</p>
         </div>
-        <Button type="button" variant="ghost" size="sm" className="no-print" onClick={() => window.print()}>
-          🖨 {t.repPrint}
-        </Button>
+        <div className="report-actions no-print">
+          <TelegramSend t={t} eventId={eventId} tg={r.telegram} />
+          <Button type="button" variant="ghost" size="sm" className="no-print" onClick={() => window.print()}>
+            🖨 {t.repPrint}
+          </Button>
+        </div>
       </div>
 
       <div className="kpis">

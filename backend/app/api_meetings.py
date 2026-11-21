@@ -274,4 +274,5 @@ def report(event_id: str, a: Auth = Depends(auth)) -> dict:
         "insights": insights,
         "locations": locations,
         "top_connectors": top,
+        "telegram": {"on": telegram.enabled(), "linked": len(telegram.linked_attendees(e))},
     }

@@ -188,3 +188,94 @@ def notify_meeting(m: dict, kind: str) -> None:
     sender, receiver = (m["from_id"], m["to_id"]) if kind == "invite" else (m["to_id"], m["from_id"])
     name, _ = _name_role(sender)
     notify(receiver, kind, name=name, location=m["location"], time=_local_time(m["at"]))
+
+
+# ------------------------------------------------------------------ event summary
+SUMMARY = {
+    "title": {
+        "ru": "Ваш нетворкинг на «{event}»",
+        "kk": "«{event}» іс-шарасындағы нетворкингіңіз",
+        "en": "Your networking at {event}",
+    },
+    "count": {
+        "ru": "Знакомств: {n}",
+        "kk": "Танысулар: {n}",
+        "en": "People met: {n}",
+    },
+    "contact": {"ru": "контакт: {c}", "kk": "байланыс: {c}", "en": "contact: {c}"},
+    "met_at": {"ru": "встретились: {loc}", "kk": "кездестіңіздер: {loc}", "en": "met at {loc}"},
+    "more": {"ru": "…и ещё {n}", "kk": "…және тағы {n}", "en": "…and {n} more"},
+    "thanks": {
+        "ru": "Спасибо, что были с нами! Пишите тем, с кем познакомились.",
+        "kk": "Бізбен болғаныңызға рахмет! Танысқандарыңызға жазыңыз.",
+        "en": "Thanks for being with us! Reach out to the people you met.",
+    },
+    "empty": {
+        "ru": "В этот раз взаимных совпадений не случилось. Увидимся на следующем Qazaq IT событии!",
+        "kk": "Бұл жолы өзара сәйкестік болмады. Келесі Qazaq IT іс-шарасында кездескенше!",
+        "en": "No matches this time, see you at the next Qazaq IT event!",
+    },
+}
+
+
+def _met_people(event: dict, member_id: str) -> list[tuple[str, bool, str | None]]:
+    """[(other_id, mutual, location of a done meeting)], one row per person, mutual first."""
+    d = ctx.state.data
+    eid = event["id"]
+    ids = set(d["attendees"].get(eid, []))
+    meets = d["meets"].get(eid, {})
+    rows: dict[str, list] = {}
+    for other in meets.get(member_id, []):
+        if other in ids and other != member_id and member_id in meets.get(other, []):
+            rows[other] = [True, None]
+    for m in sorted(d["meetings"].get(eid, {}).values(), key=lambda x: x.get("created", "")):
+        if m["status"] != "done" or member_id not in (m["from_id"], m["to_id"]):
+            continue
+        other = m["to_id"] if m["from_id"] == member_id else m["from_id"]
+        if other not in ids:
+            continue
+        row = rows.setdefault(other, [False, None])
+        row[1] = m["location"]
+    ordered = sorted(rows.items(), key=lambda kv: not kv[1][0])
+    return [(o, mutual, loc) for o, (mutual, loc) in ordered]
+
+
+def build_summary(event: dict, member_id: str) -> str:
+    lang = _lang(member_id)
+    contacts = ctx.state.data["contacts"]
+    people = [(o, mu, loc) for o, mu, loc in _met_people(event, member_id) if ctx.index.get(o)]
+    lines = [SUMMARY["title"][lang].format(event=event["title"]), ""]
+    if not people:
+        lines.append(SUMMARY["empty"][lang])
+        return "\n".join(lines)
+    lines.append(SUMMARY["count"][lang].format(n=len(people)))
+    lines.append("")
+    for other, mutual, loc in people[:10]:
+        name, role = _name_role(other)
+        bits = [f"• {name}" + (f", {role}" if role else "")]
+        if mutual and contacts.get(other):
+            bits.append(SUMMARY["contact"][lang].format(c=contacts[other]))
+        if loc:
+            bits.append(SUMMARY["met_at"][lang].format(loc=loc))
+        lines.append(" — ".join(bits))
+    if len(people) > 10:
+        lines.append(SUMMARY["more"][lang].format(n=len(people) - 10))
+    lines += ["", SUMMARY["thanks"][lang]]
+    return "\n".join(lines)
+
+
+def linked_attendees(event: dict) -> list[str]:
+    chats = _data()["tg_chats"]
+    return [m for m in ctx.state.data["attendees"].get(event["id"], []) if m in chats and ctx.index.get(m)]
+
+
+def send_summary(event: dict) -> int:
+    """Send every Telegram-linked attendee a personal results message. Returns how many were sent."""
+    if not enabled():
+        return 0
+    chats = _data()["tg_chats"]
+    sent = 0
+    for member_id in linked_attendees(event):
+        _send(chats[member_id], build_summary(event, member_id))
+        sent += 1
+    return sent

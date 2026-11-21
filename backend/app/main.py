@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .api_events import router as events_router
 from . import telegram
+from .github import router as github_router
 from .api_meetings import router as meetings_router
 from .ctx import ctx
 from .events_models import DEFAULT_LOCATIONS
@@ -100,6 +101,7 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 app.include_router(events_router)
 app.include_router(meetings_router)
 app.include_router(telegram.router)
+app.include_router(github_router)
 
 
 def _event_ids(code: str | None) -> set[str] | None:

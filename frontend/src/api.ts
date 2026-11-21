@@ -14,6 +14,8 @@ import type {
   MemberOut,
   SystemRole,
   GraphResponse,
+  GithubProfile,
+  TelegramSummaryResult,
   JoinResponse,
   Lang,
   MeOut,
@@ -75,6 +77,8 @@ export const api = {
 
   addProfile: (profile: ProfileIn) => post<{ id: string }>("/api/profiles", profile),
 
+  github: (username: string) => get<GithubProfile>(`/api/github/${encodeURIComponent(username)}`),
+
   profiles: () => get<Profile[]>("/api/profiles"),
 
   graph: (viewer?: string) => get<GraphResponse>(`/api/graph${viewer ? `?viewer=${encodeURIComponent(viewer)}` : ""}`),
@@ -118,6 +122,7 @@ export const api = {
   addAttendee: (id: string, body: { member_id: string } | { profile: ProfileIn }) => post<Attendee>(`/api/events/${id}/attendees`, body),
   removeAttendee: (id: string, memberId: string) => send<void>("DELETE", `/api/events/${id}/attendees/${memberId}`),
   report: (id: string) => get<EventReport>(`/api/events/${id}/report`),
+  telegramSummary: (id: string) => post<TelegramSummaryResult>(`/api/events/${id}/telegram-summary`, {}),
   stats: (id: string) => get<EventStats>(`/api/events/${id}/stats`),
   members: () => get<MemberOut[]>("/api/members"),
   setRole: (memberId: string, role: SystemRole) => send<Attendee>("PATCH", `/api/members/${memberId}/role`, { role }),

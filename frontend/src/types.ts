@@ -192,4 +192,21 @@ export interface EventReport {
   )[];
   locations: { name: string; now: number; meetings: number }[];
   top_connectors: { id: string; name: string; role: string; mutual: number }[];
+  telegram?: { on: boolean; linked: number };
+}
+
+export interface GithubProfile {
+  login: string;
+  name: string;
+  about: string;
+  stack: string[];
+  interests: string[];
+  experience_years: number;
+  avatar_url: string;
+  repos: number;
+}
+
+export interface TelegramSummaryResult {
+  sent: number;
+  linked: number;
 }

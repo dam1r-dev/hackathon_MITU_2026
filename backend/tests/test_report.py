@@ -49,7 +49,7 @@ def test_report_numbers_and_access(client):
     assert r.status_code == 200
     rep = r.json()
     assert set(rep) == {"attendees", "matched_share", "mutual_pairs", "meetings", "timeline", "by_goal",
-                        "insights", "locations", "top_connectors"}
+                        "insights", "locations", "top_connectors", "telegram"}
     assert rep["attendees"] == 4 and rep["mutual_pairs"] == 2
     assert rep["matched_share"] == 0.75  # A, B, C of four
     assert rep["meetings"] == {"proposed": 1, "accepted": 0, "done": 1}

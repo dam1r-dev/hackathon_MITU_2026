@@ -559,3 +559,14 @@ select:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-co
 }
 .hiring-line { font-size: var(--fs-sm); color: var(--text-dim); margin: 2px 0 var(--sp-1); overflow-wrap: anywhere; }
 .hiring-line strong { color: var(--text); font-weight: var(--fw-semibold); }
+
+/* ---------- GitHub prefill + Telegram results ---------- */
+.gh-fill { display: grid; gap: var(--sp-2); }
+.gh-row { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
+.gh-icon { flex: none; color: var(--text-dim); }
+.gh-input { flex: 1; min-width: 0; width: auto; }
+.gh-row .btn { flex: none; }
+.gh-ok { display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-sm); color: var(--success); }
+.gh-ok img { border-radius: 50%; flex: none; }
+.report-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--sp-3); min-width: 0; }
+.tg-send { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); }

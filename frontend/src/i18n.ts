@@ -83,6 +83,20 @@ export type Dict = {
   submit: string;
   loading: string;
   example: string;
+  ghLabel: string;
+  ghPlaceholder: string;
+  ghFill: string;
+  ghFilling: string;
+  ghDone: (langs: number, topics: number) => string;
+  ghNotFound: string;
+  ghLater: string;
+  tgSend: string;
+  tgSending: string;
+  tgConfirm: (n: number) => string;
+  tgSent: (n: number) => string;
+  tgOff: string;
+  tgNone: string;
+  tgError: string;
   results: string;
   resultsJoined: string;
   edit: string;
@@ -321,6 +335,20 @@ const en: Dict = {
   submit: "Find my 5 people",
   loading: "Matching...",
   example: "Fill with an example",
+  ghLabel: "GitHub",
+  ghPlaceholder: "GitHub username",
+  ghFill: "Fill in",
+  ghFilling: "Loading...",
+  ghDone: (l, tp) => `Filled from GitHub: ${l} languages, ${tp} topics`,
+  ghNotFound: "No such GitHub user. Check the username.",
+  ghLater: "GitHub is not answering right now. Try again later.",
+  tgSend: "Send results to Telegram",
+  tgSending: "Sending...",
+  tgConfirm: (n) => `Send a personal summary to ${n} connected participants?`,
+  tgSent: (n) => `Sent: ${n}`,
+  tgOff: "The Telegram bot is not connected on this server.",
+  tgNone: "Nobody has connected Telegram yet.",
+  tgError: "Could not send. Try again.",
   results: "Your top 5",
   resultsJoined: "You are on the map. Your top 5",
   edit: "Edit profile",
@@ -573,6 +601,20 @@ const ru: Dict = {
   submit: "Найти 5 человек",
   loading: "Подбираем...",
   example: "Заполнить примером",
+  ghLabel: "GitHub",
+  ghPlaceholder: "Ник на GitHub",
+  ghFill: "Заполнить",
+  ghFilling: "Загрузка...",
+  ghDone: (l, tp) => `Заполнено из GitHub: языков ${l}, тем ${tp}`,
+  ghNotFound: "Такого пользователя GitHub нет. Проверьте ник.",
+  ghLater: "GitHub сейчас не отвечает. Попробуйте позже.",
+  tgSend: "Отправить итоги в Telegram",
+  tgSending: "Отправляем...",
+  tgConfirm: (n) => `Отправить личные итоги ${n} подключённым участникам?`,
+  tgSent: (n) => `Отправлено: ${n}`,
+  tgOff: "Telegram-бот на этом сервере не подключён.",
+  tgNone: "Пока никто не подключил Telegram.",
+  tgError: "Не удалось отправить. Попробуйте ещё раз.",
   results: "Ваши топ-5",
   resultsJoined: "Вы на карте. Ваши топ-5",
   edit: "Изменить анкету",
@@ -820,6 +862,20 @@ const kk: Dict = {
   submit: "5 адамды табу",
   loading: "Іздеп жатырмыз...",
   example: "Мысалмен толтыру",
+  ghLabel: "GitHub",
+  ghPlaceholder: "GitHub логині",
+  ghFill: "Толтыру",
+  ghFilling: "Жүктелуде...",
+  ghDone: (l, tp) => `GitHub-тан толтырылды: ${l} тіл, ${tp} тақырып`,
+  ghNotFound: "Мұндай GitHub пайдаланушысы жоқ. Логинді тексеріңіз.",
+  ghLater: "GitHub қазір жауап бермейді. Кейінірек қайталаңыз.",
+  tgSend: "Нәтижені Telegram-ға жіберу",
+  tgSending: "Жіберілуде...",
+  tgConfirm: (n) => `Қосылған ${n} қатысушыға жеке қорытынды жіберілсін бе?`,
+  tgSent: (n) => `Жіберілді: ${n}`,
+  tgOff: "Бұл серверде Telegram боты қосылмаған.",
+  tgNone: "Әзірге ешкім Telegram-ды қосқан жоқ.",
+  tgError: "Жіберу мүмкін болмады. Қайталап көріңіз.",
   results: "Сіздің топ-5",
   resultsJoined: "Сіз картадасыз. Сіздің топ-5",
   edit: "Сауалнаманы өзгерту",

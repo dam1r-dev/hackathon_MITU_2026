@@ -592,6 +592,19 @@ def event_stats(event_id: str, a: Auth = Depends(auth)) -> Stats:
     return Stats(attendees=total, by_goal=[GoalCount(goal=g, count=c) for g, c in counts.items()], hints=hints)
 
 
+@router.post("/events/{event_id}/telegram-summary")
+def telegram_summary(event_id: str, a: Auth = Depends(auth)) -> dict:
+    """Send each Telegram-linked attendee their personal networking results."""
+    from . import telegram  # lazy: telegram imports this module
+
+    e = _event_by_id(event_id)
+    need_manager(a, e)
+    if not telegram.enabled():
+        raise HTTPException(409, "telegram_off")
+    linked = len(telegram.linked_attendees(e))
+    return {"sent": telegram.send_summary(e), "linked": linked}
+
+
 # ------------------------------------------------------------------ members (admin)
 @router.get("/members", response_model=list[MemberOut])
 def list_members(a: Auth = Depends(auth)) -> list[MemberOut]:
