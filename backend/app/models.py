@@ -47,6 +47,9 @@ class Match(BaseModel):
     they_give: str
     explanation: str
     icebreaker: str
+    # Event matches only: where this person says they are now (fresh, under 90 minutes old).
+    location: str | None = None
+    location_at: str | None = None
 
 
 class RecommendRequest(BaseModel):

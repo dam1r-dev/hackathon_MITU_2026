@@ -4,6 +4,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://REPLACE-ME.trycloudflare.com/api/:path*" }
+    { "source": "/pin", "destination": "/index.html" },
+    { "source": "/api/:path*", "destination": "https://planet-endorsed-intensive-comparative.trycloudflare.com/api/:path*" }
   ]
 }

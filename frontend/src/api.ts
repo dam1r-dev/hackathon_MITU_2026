@@ -3,6 +3,10 @@ import type {
   Attendee,
   EventInfo,
   EventStats,
+  LocationCount,
+  LocationState,
+  OpenEvent,
+  PublicStats,
   MemberOut,
   SystemRole,
   GraphResponse,
@@ -75,6 +79,9 @@ export const api = {
     post<RecommendResponse>("/api/feedback", { viewer_id, target_id, verdict, ...(event_code ? { event_code } : {}) }),
 
   // Events (public)
+  openEvents: () => get<OpenEvent[]>("/api/events/open"),
+  eventStats: (code: string) => get<PublicStats>(`${ev(code)}/stats`),
+  eventLocations: (code: string) => get<LocationCount[]>(`${ev(code)}/locations`),
   event: (code: string) => get<EventInfo>(ev(code)),
   eventQrUrl: (code: string) => `${ev(code)}/qr.svg`,
   eventGraph: (code: string) => get<GraphResponse>(`${ev(code)}/graph`),
@@ -85,12 +92,16 @@ export const api = {
   meet: (code: string, target_id: string) => post<MeetResponse>(`${ev(code)}/meet`, { target_id }),
   mutual: (code: string) => get<MutualOut[]>(`${ev(code)}/mutual`),
   me: () => get<MeOut>("/api/me"),
+  updateMe: (profile: ProfileIn, contact?: string | null) => send<MeOut>("PATCH", "/api/me", { profile, contact: contact ?? null }),
+  setLocation: (code: string, location: string | null) => post<LocationState>(`${ev(code)}/location`, { location }),
 
   // Admin / organizer (X-Admin-Token or an organizer's X-Member-Token)
   adminLogin: (code: string) => post<{ token: string }>("/api/admin/login", { code }),
+  eventPin: (code: string) => get<{ pin: string; expires_in: number }>(`${ev(code)}/pin`),
+  resolvePin: (pin: string) => post<{ code: string }>("/api/pin", { pin }),
   events: () => get<EventInfo[]>("/api/events"),
   createEvent: (body: { title: string; date: string; venue: string; code?: string }) => post<EventInfo>("/api/events", body),
-  patchEvent: (id: string, body: Partial<Pick<EventInfo, "title" | "date" | "venue" | "status">>) =>
+  patchEvent: (id: string, body: Partial<Pick<EventInfo, "title" | "date" | "venue" | "status" | "locations">>) =>
     send<EventInfo>("PATCH", `/api/events/${id}`, body),
   deleteEvent: (id: string) => send<void>("DELETE", `/api/events/${id}`),
   attendees: (id: string) => get<Attendee[]>(`/api/events/${id}/attendees`),

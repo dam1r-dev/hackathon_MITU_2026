@@ -41,6 +41,9 @@ export interface Match {
   they_give: string;
   explanation: string;
   icebreaker: string;
+  /** Event matches only: current venue location, when fresh (< 90 min). */
+  location?: string | null;
+  location_at?: string | null;
 }
 
 export interface RecommendResponse {
@@ -75,6 +78,7 @@ export interface EventInfo {
   organizer_ids: string[];
   created_at: string;
   attendee_count: number;
+  locations: string[];
   join_path: string;
   join_url: string;
 }
@@ -97,10 +101,36 @@ export interface MutualOut {
   contact: string | null;
 }
 
+export interface LocationState {
+  location: string | null;
+  at: string | null;
+}
+
 export interface MeOut {
   profile: Profile;
   system_role: SystemRole;
+  contact: string | null;
   events: EventInfo[];
+  /** event id -> my current location (fresh only) */
+  locations: Record<string, LocationState>;
+}
+
+export interface OpenEvent {
+  code: string;
+  title: string;
+  date: string;
+  venue: string;
+  attendee_count: number;
+}
+
+export interface LocationCount {
+  name: string;
+  count: number;
+}
+
+export interface PublicStats {
+  attendees: number;
+  by_goal: { goal: Goal; count: number }[];
 }
 
 export interface Attendee {

@@ -488,3 +488,50 @@ select:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-co
 }
 .ok-note { font-size: var(--fs-sm); color: var(--success); margin-bottom: var(--sp-3); }
 .add-attendee .segmented { justify-self: start; }
+
+/* PIN join (laptops without QR) */
+.pin-link { margin: var(--sp-3) 0 0; font-size: var(--fs-sm); color: var(--text-dim); }
+.pin-link a { color: var(--accent); font-weight: var(--fw-semibold); }
+.pin-form { display: grid; gap: var(--sp-4); justify-items: center; text-align: center; max-width: 420px; margin: var(--sp-6) auto; }
+.pin-input { width: 100%; text-align: center; font-size: clamp(32px, 9vw, 48px); letter-spacing: .12em; padding: var(--sp-3); }
+.screen-pin { display: grid; gap: var(--sp-1); justify-items: center; padding: var(--sp-3) var(--sp-4); border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+.screen-pin-hint { font-size: var(--fs-md); color: var(--text-dim); }
+.screen-pin-hint strong { color: var(--text); }
+.screen-pin-digits { font-size: clamp(40px, 6vw, 72px); font-weight: 700; letter-spacing: .12em; line-height: 1.1; margin: 0; font-variant-numeric: tabular-nums; }
+.screen-pin-left { font-size: var(--fs-sm); }
+
+/* ---------- Events hub, venue tab, edit profile ---------- */
+.hub-code { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); flex-wrap: wrap; border-color: var(--accent); background: var(--accent-soft); }
+.hub-code h2 { font-size: var(--fs-lg); }
+.hub-heading { margin-top: var(--sp-6); }
+.event-tabs { display: flex; margin: var(--sp-4) 0; }
+.event-tabs .segmented { width: 100%; }
+.event-tabs .segmented button { flex: 1; padding: 8px 10px; }
+.where { font-size: var(--fs-xs); color: var(--text-dim); margin-top: 2px; }
+.venue, .room { display: grid; gap: var(--sp-4); }
+.loc-picker { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.loc-chip {
+  font: inherit; font-size: var(--fs-sm); cursor: pointer; color: var(--text);
+  background: var(--surface-2); border: 1px solid transparent; border-radius: var(--radius-full);
+  padding: 6px var(--sp-3); min-height: 36px;
+}
+.loc-chip:hover:not(:disabled) { background: var(--surface-3); }
+.loc-chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-contrast); }
+.loc-chip:disabled { opacity: .5; cursor: default; }
+.loc-hide { background: transparent; border-color: var(--border); color: var(--text-dim); }
+.venue-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); }
+@media (min-width: 720px) { .venue-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.venue-tile {
+  display: grid; gap: var(--sp-2); align-content: start; min-height: 112px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: var(--sp-3);
+}
+.venue-tile[data-mine] { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 1px var(--accent); }
+.venue-name { font-weight: var(--fw-semibold); overflow-wrap: anywhere; }
+.venue-count strong { font-size: var(--fs-lg); }
+.venue-people { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.venue-me { color: var(--accent); }
+.hub-code, .event-row { min-width: 0; }
+.edit-actions { display: flex; gap: var(--sp-3); flex-wrap: wrap; }
+.loc-editor { display: grid; gap: var(--sp-3); }
+.screen-venue { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-4); margin: var(--sp-3) 0 0; padding: 0; list-style: none; font-size: var(--fs-sm); }
+.screen-venue strong { margin-left: 4px; }

@@ -25,6 +25,7 @@ def _empty() -> dict:
         "tokens": {},  # member token -> member_id
         "contacts": {},  # member_id -> contact string
         "meets": {},  # event_id -> {viewer_id: [target_id]}
+        "presence": {},  # event_id -> {member_id: {"location": str, "at": iso}}
         "feedback": {},  # viewer_id -> {"met": [...], "not_fit": [...]}
     }
 

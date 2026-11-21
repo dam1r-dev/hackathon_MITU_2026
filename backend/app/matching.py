@@ -111,6 +111,16 @@ class Index:
         self.profiles.extend(new)
         self._layout = None
 
+    def update(self, p: Profile) -> bool:
+        """Replace a stored profile (same id) and re-embed it."""
+        i = next((k for k, x in enumerate(self.profiles) if x.id == p.id), None)
+        if i is None:
+            return False
+        self.mat[i] = self.embedder.encode([profile_text(p)])[0]
+        self.profiles[i] = p
+        self._layout = None
+        return True
+
     def get(self, pid: str) -> Profile | None:
         return next((p for p in self.profiles if p.id == pid), None)
 

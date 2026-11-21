@@ -6,32 +6,42 @@ Access, kept deliberately simple for a 24-hour build:
   - Member: joining an event through its QR code returns a token, sent as `X-Member-Token`.
   - Organizer: a member with role "organizer" who is listed in an event's organizer_ids manages that event.
 """
+import hmac
 import io
 import os
 import re
 import secrets
+import time
+from datetime import datetime, timezone
 
 import segno
-from fastapi import APIRouter, Depends, Header, HTTPException, Response
+from fastapi import APIRouter, Body, Depends, Header, HTTPException, Response
 
+from . import pin as pinlib
 from .ctx import ctx
 from .events_models import (
     Attendee,
     AttendeeIn,
     Event,
     EventIn,
+    DEFAULT_LOCATIONS,
     EventPatch,
     GoalCount,
     Hint,
     JoinRequest,
     JoinResponse,
+    LocationCount,
+    LocationIn,
+    LocationOut,
     LoginRequest,
     LoginResponse,
     MeetRequest,
     MeetResponse,
     MemberOut,
     MeOut,
+    MePatch,
     MutualOut,
+    OpenEvent,
     RoleRequest,
     Stats,
 )
@@ -40,6 +50,7 @@ from .models import (
     GraphNode,
     GraphResponse,
     Lang,
+    Match,
     Profile,
     ProfileIn,
     RecommendResponse,
@@ -119,11 +130,36 @@ def event_out(e: dict) -> Event:
     known = {p.id for p in ctx.index.profiles}
     count = sum(1 for m in ctx.state.data["attendees"].get(e["id"], []) if m in known)
     return Event(
-        **e,
+        **{**e, "locations": e.get("locations") or list(DEFAULT_LOCATIONS)},
         attendee_count=count,
         join_path=f"/#/join/{e['code']}",
         join_url=f"{_public_url()}/#/join/{e['code']}",
     )
+
+
+FRESH_MINUTES = 90
+
+
+def _fresh_presence(event_id: str, member_id: str) -> dict | None:
+    """The member's location in this event if it was updated within the last 90 minutes."""
+    rec = ctx.state.data["presence"].get(event_id, {}).get(member_id)
+    if not rec:
+        return None
+    try:
+        at = datetime.fromisoformat(rec["at"])
+    except (KeyError, ValueError):
+        return None
+    if (datetime.now(timezone.utc) - at).total_seconds() > FRESH_MINUTES * 60:
+        return None
+    return rec
+
+
+def _with_locations(e: dict, matches: list[Match]) -> list[Match]:
+    for m in matches:
+        rec = _fresh_presence(e["id"], m.profile.id)
+        if rec:
+            m.location, m.location_at = rec["location"], rec["at"]
+    return matches
 
 
 def _as_in(p: Profile) -> ProfileIn:
@@ -193,11 +229,24 @@ def create_event(req: EventIn, a: Auth = Depends(auth)) -> Event:
             "status": "open",
             "organizer_ids": req.organizer_ids,
             "created_at": st.now(),
+            "locations": list(DEFAULT_LOCATIONS),
         }
         st.data["events"][e["id"]] = e
         st.data["attendees"][e["id"]] = []
         st.save()
     return event_out(e)
+
+
+@router.get("/events/open", response_model=list[OpenEvent])
+def open_events() -> list[OpenEvent]:
+    """Public list for the home page. No organizer ids."""
+    events = [e for e in ctx.state.data["events"].values() if e["status"] == "open"]
+    events.sort(key=lambda e: e["created_at"], reverse=True)
+    out = []
+    for e in events:
+        o = event_out(e)
+        out.append(OpenEvent(code=o.code, title=o.title, date=o.date, venue=o.venue, attendee_count=o.attendee_count))
+    return out
 
 
 # Public routes by join code come before the {event_id} routes.
@@ -212,6 +261,29 @@ def event_qr(code: str) -> Response:
     buf = io.BytesIO()
     segno.make(event_out(e).join_url, error="m").save(buf, kind="svg", scale=10, border=2, dark="#000000")
     return Response(content=buf.getvalue(), media_type="image/svg+xml")
+
+
+@router.get("/events/by-code/{code}/pin")
+def event_pin(code: str, a: Auth = Depends(auth)) -> dict:
+    """Current rotating PIN for the projector. Admin or an organizer of this event."""
+    e = _event_by_code(code)
+    need_manager(a, e)
+    return {"pin": pinlib.pin_for(e["id"]), "expires_in": pinlib.seconds_left()}
+
+
+@router.post("/pin")
+def resolve_pin(req: dict = Body(...)) -> dict:
+    """Public: turn a PIN from the screen into an event code. Current and previous window are valid."""
+    digits = re.sub(r"\D", "", str(req.get("pin", "")))
+    if len(digits) == 6:
+        window = int(time.time() // pinlib.WINDOW_SECONDS)
+        for e in ctx.state.data["events"].values():
+            if e["status"] != "open":
+                continue
+            for w in (window, window - 1):
+                if hmac.compare_digest(pinlib.pin_for(e["id"], w), digits):
+                    return {"code": e["code"]}
+    raise HTTPException(404, "pin_invalid")
 
 
 @router.get("/events/by-code/{code}/graph", response_model=GraphResponse)
@@ -257,7 +329,61 @@ def join_event(code: str, req: JoinRequest, a: Auth = Depends(auth)) -> JoinResp
         st.save()
         allowed = set(lst)
     took_ms, matches = idx.recommend(_as_in(member), req.lang, member.id, allowed_ids=allowed)
-    return JoinResponse(member_id=member.id, token=token or "", event=event_out(e), took_ms=took_ms, matches=matches)
+    return JoinResponse(
+        member_id=member.id, token=token or "", event=event_out(e), took_ms=took_ms, matches=_with_locations(e, matches)
+    )
+
+
+def _goal_counts(event_id: str) -> tuple[int, dict[str, int]]:
+    ids = _attendee_ids(event_id)
+    counts = {g: 0 for g in RECIPROCAL}
+    total = 0
+    for p in ctx.index.profiles:
+        if p.id in ids:
+            counts[p.goal] += 1
+            total += 1
+    return total, counts
+
+
+@router.get("/events/by-code/{code}/stats")
+def event_stats_public(code: str) -> dict:
+    """Public goal statistics for the room tab. No member data."""
+    e = _event_by_code(code)
+    total, counts = _goal_counts(e["id"])
+    return {"attendees": total, "by_goal": [{"goal": g, "count": c} for g, c in counts.items()]}
+
+
+@router.get("/events/by-code/{code}/locations", response_model=list[LocationCount])
+def event_locations(code: str) -> list[LocationCount]:
+    e = _event_by_code(code)
+    ids = _attendee_ids(e["id"])
+    counts = {name: 0 for name in event_out(e).locations}
+    for mid in ctx.state.data["presence"].get(e["id"], {}):
+        rec = _fresh_presence(e["id"], mid)
+        if rec and mid in ids and rec["location"] in counts:
+            counts[rec["location"]] += 1
+    return [LocationCount(name=n, count=c) for n, c in counts.items()]
+
+
+@router.post("/events/by-code/{code}/location", response_model=LocationOut)
+def set_location(code: str, req: LocationIn, a: Auth = Depends(auth)) -> LocationOut:
+    me_id = need_member(a)
+    e = _event_by_code(code)
+    if me_id not in _attendee_ids(e["id"]):
+        raise HTTPException(403, "not_in_event")
+    st = ctx.state
+    with st.lock:
+        per_event = st.data["presence"].setdefault(e["id"], {})
+        if req.location is None:
+            per_event.pop(me_id, None)
+            st.save()
+            return LocationOut()
+        if req.location not in event_out(e).locations:
+            raise HTTPException(422, "unknown_location")
+        rec = {"location": req.location, "at": st.now()}
+        per_event[me_id] = rec
+        st.save()
+    return LocationOut(location=rec["location"], at=rec["at"])
 
 
 @router.get("/events/by-code/{code}/matches", response_model=RecommendResponse)
@@ -268,7 +394,7 @@ def event_matches(code: str, lang: Lang = "ru", a: Auth = Depends(auth)) -> Reco
     if me_id not in allowed:
         raise HTTPException(403, "not_in_event")
     took_ms, matches = ctx.index.recommend(_as_in(ctx.index.get(me_id)), lang, me_id, allowed_ids=allowed)
-    return RecommendResponse(took_ms=took_ms, matches=matches)
+    return RecommendResponse(took_ms=took_ms, matches=_with_locations(e, matches))
 
 
 @router.post("/events/by-code/{code}/meet", response_model=MeetResponse)
@@ -303,14 +429,46 @@ def mutual_meets(code: str, a: Auth = Depends(auth)) -> list[MutualOut]:
     return out
 
 
-@router.get("/me", response_model=MeOut)
-def me(a: Auth = Depends(auth)) -> MeOut:
-    me_id = need_member(a)
+def _me_out(me_id: str) -> MeOut:
+    st = ctx.state
     p = ctx.index.get(me_id)
     if not p:
         raise HTTPException(404, "member_not_found")
-    events = [event_out(ctx.state.data["events"][eid]) for eid in ctx.state.events_of(me_id) if eid in ctx.state.data["events"]]
-    return MeOut(profile=p, system_role=ctx.state.role(me_id), events=events)
+    events = [event_out(st.data["events"][eid]) for eid in st.events_of(me_id) if eid in st.data["events"]]
+    locs = {}
+    for ev in events:
+        rec = _fresh_presence(ev.id, me_id)
+        if rec:
+            locs[ev.id] = LocationOut(location=rec["location"], at=rec["at"])
+    return MeOut(
+        profile=p, system_role=st.role(me_id), contact=st.data["contacts"].get(me_id), events=events, locations=locs
+    )
+
+
+@router.get("/me", response_model=MeOut)
+def me(a: Auth = Depends(auth)) -> MeOut:
+    return _me_out(need_member(a))
+
+
+@router.patch("/me", response_model=MeOut)
+def patch_me(req: MePatch, a: Auth = Depends(auth)) -> MeOut:
+    """Edit own profile. Only members who joined at runtime; dataset profiles stay as they are."""
+    me_id = need_member(a)
+    st = ctx.state
+    with st.lock:
+        if me_id not in st.data["profiles"]:
+            raise HTTPException(403, "profile_not_editable")
+        profile = Profile(id=me_id, **req.profile.model_dump())
+        if not ctx.index.update(profile):
+            raise HTTPException(404, "member_not_found")
+        st.data["profiles"][me_id] = profile.model_dump()
+        if req.contact is not None:
+            if req.contact.strip():
+                st.data["contacts"][me_id] = req.contact.strip()
+            else:
+                st.data["contacts"].pop(me_id, None)
+        st.save()
+    return _me_out(me_id)
 
 
 # ------------------------------------------------------------------ event management by id
@@ -338,6 +496,7 @@ def delete_event(event_id: str, a: Auth = Depends(auth)) -> Response:
         st.data["events"].pop(event_id, None)
         st.data["attendees"].pop(event_id, None)
         st.data["meets"].pop(event_id, None)
+        st.data["presence"].pop(event_id, None)
         st.save()
     return Response(status_code=204)
 
@@ -384,6 +543,7 @@ def remove_attendee(event_id: str, member_id: str, a: Auth = Depends(auth)) -> R
             if member_id in viewer_targets:
                 viewer_targets.remove(member_id)
         st.data["meets"].get(e["id"], {}).pop(member_id, None)
+        st.data["presence"].get(e["id"], {}).pop(member_id, None)
         st.save()
     return Response(status_code=204)
 
@@ -392,13 +552,7 @@ def remove_attendee(event_id: str, member_id: str, a: Auth = Depends(auth)) -> R
 def event_stats(event_id: str, a: Auth = Depends(auth)) -> Stats:
     e = _event_by_id(event_id)
     need_manager(a, e)
-    ids = _attendee_ids(e["id"])
-    counts = {g: 0 for g in RECIPROCAL}
-    total = 0
-    for p in ctx.index.profiles:
-        if p.id in ids:
-            counts[p.goal] += 1
-            total += 1
+    total, counts = _goal_counts(e["id"])
     hints: list[Hint] = []
     for first, second in (("find_job", "hire"), ("find_mentor", "be_mentor")):
         for scarce, plenty in ((first, second), (second, first)):
@@ -462,6 +616,8 @@ def delete_member(member_id: str, a: Auth = Depends(auth)) -> Response:
         for event in st.data["events"].values():
             if member_id in event["organizer_ids"]:
                 event["organizer_ids"].remove(member_id)
+        for per_event in st.data["presence"].values():
+            per_event.pop(member_id, None)
         for per_event in st.data["meets"].values():
             per_event.pop(member_id, None)
             for targets in per_event.values():

@@ -539,10 +539,48 @@ function AdminEvent({ t, role, eventId, go }: { t: Dict; role: Role; eventId: st
             )}
           </section>
 
+          {event && <LocationsEditor t={t} event={event} onSaved={load} />}
+
           <AddAttendee t={t} role={role} eventId={eventId} present={new Set(people?.map((a) => a.profile.id))} onAdded={load} />
         </aside>
       </div>
     </>
+  );
+}
+
+function LocationsEditor({ t, event, onSaved }: { t: Dict; event: EventInfo; onSaved: () => void }) {
+  const [text, setText] = useState(event.locations.join("\n"));
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<"saved" | "error" | null>(null);
+  const names = text.split("\n").map((x) => x.trim()).filter(Boolean);
+
+  async function save() {
+    setBusy(true);
+    setMsg(null);
+    try {
+      await api.patchEvent(event.id, { locations: names });
+      setMsg("saved");
+      onSaved();
+    } catch {
+      setMsg("error");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="card loc-editor">
+      <h2 className="card-title">{t.venueLocations}</h2>
+      <textarea rows={5} value={text} onChange={(e) => setText(e.target.value)} aria-label={t.venueLocations} />
+      <span className="field-hint">{t.venueLocationsHint}</span>
+      <div className="edit-actions">
+        <Button type="button" size="sm" disabled={busy || names.length < 1 || names.length > 12} onClick={save}>
+          {t.saveProfile}
+        </Button>
+        {msg === "saved" && <span className="ok-note">✓ {t.saved}</span>}
+        {msg === "error" && <span className="alert">{t.error}</span>}
+      </div>
+    </section>
   );
 }
 

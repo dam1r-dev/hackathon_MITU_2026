@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .api_events import router as events_router
 from .ctx import ctx
+from .events_models import DEFAULT_LOCATIONS
 from .embeddings import Embedder
 from .matching import Index
 from .models import (
@@ -59,6 +60,7 @@ def _seed_events(dataset_ids: list[str]) -> None:
             "status": it.get("status", "open"),
             "organizer_ids": [m for m in it.get("organizer_ids", []) if m in known],
             "created_at": st.now(),
+            "locations": list(it.get("locations") or DEFAULT_LOCATIONS),
         }
         st.data["attendees"][eid] = [m for m in attendees if m in known]
     st.save()
@@ -83,6 +85,9 @@ async def lifespan(_: FastAPI):
         for v, x in st.data["feedback"].items()
     }
     idx.on_feedback = _persist_feedback
+    for e in st.data["events"].values():
+        if not e.get("locations"):
+            e["locations"] = list(DEFAULT_LOCATIONS)
     _seed_events([p.id for p in dataset])
     yield
 
@@ -111,7 +116,7 @@ def health() -> dict:
     }
 
 
-@app.post("/api/recommend", response_model=RecommendResponse)
+@app.post("/api/recommend", response_model=RecommendResponse, response_model_exclude_none=True)
 def recommend(req: RecommendRequest) -> RecommendResponse:
     took_ms, matches = ctx.index.recommend(
         req.profile, req.lang, req.viewer_id, allowed_ids=_event_ids(req.event_code)
@@ -159,7 +164,7 @@ def graph(viewer: str | None = None, event: str | None = None) -> GraphResponse:
     return GraphResponse(nodes=nodes, edges=edges)
 
 
-@app.post("/api/feedback", response_model=RecommendResponse)
+@app.post("/api/feedback", response_model=RecommendResponse, response_model_exclude_none=True)
 def feedback(fb: FeedbackRequest) -> RecommendResponse:
     me = ctx.index.get(fb.viewer_id)
     if not me:

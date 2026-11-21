@@ -27,9 +27,11 @@ type Props = {
   /** Extra fields shown before the submit button (e.g. contact on event join). */
   children?: ReactNode;
   submitLabel?: string;
+  /** Editing an existing profile: no "fill with an example" link. */
+  hideExample?: boolean;
 };
 
-export function ProfileForm({ t, value, onChange, onSubmit, loading, children, submitLabel }: Props) {
+export function ProfileForm({ t, value, onChange, onSubmit, loading, children, submitLabel, hideExample }: Props) {
   const [touched, setTouched] = useState(false);
   const set = <K extends keyof ProfileIn>(k: K, v: ProfileIn[K]) => onChange({ ...value, [k]: v });
   const missing = { name: !value.name.trim(), role: !value.role.trim() };
@@ -48,9 +50,11 @@ export function ProfileForm({ t, value, onChange, onSubmit, loading, children, s
         onSubmit();
       }}
     >
-      <Button type="button" variant="link" onClick={() => onChange({ ...EXAMPLE, lang: value.lang })}>
-        ✦ {t.example}
-      </Button>
+      {!hideExample && (
+        <Button type="button" variant="link" onClick={() => onChange({ ...EXAMPLE, lang: value.lang })}>
+          ✦ {t.example}
+        </Button>
+      )}
 
       <fieldset>
         <legend className="field-label">{t.goal}</legend>

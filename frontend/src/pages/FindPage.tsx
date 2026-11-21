@@ -2,6 +2,7 @@ import { MatchCard } from "../components/MatchCard";
 import { ProfileForm } from "../components/ProfileForm";
 import { Button } from "../components/ui";
 import type { Dict } from "../i18n";
+import { href } from "../state";
 import type { Matcher } from "../state";
 
 type Props = { t: Dict; matcher: Matcher; join: boolean; onShowMap: () => void };
@@ -16,6 +17,9 @@ export function FindPage({ t, matcher, join, onShowMap }: Props) {
 
   return (
     <div className="page">
+      <p className="pin-link">
+        {t.pinLink} <a href={href({ name: "pin" })}>{t.pinLinkCta} →</a>
+      </p>
       <header className="hero">
         <h1>{join ? t.joinTitle : t.title}</h1>
         <p className="sub">{join ? t.joinSubtitle : t.subtitle}</p>

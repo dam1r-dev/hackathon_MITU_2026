@@ -1,7 +1,7 @@
 """Models for events, members, roles and access. Mirror docs/CONTRACT.md."""
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from .models import Goal, Lang, Match, Profile, ProfileIn
 
@@ -23,6 +23,24 @@ class EventPatch(BaseModel):
     venue: str | None = None
     status: EventStatus | None = None
     organizer_ids: list[str] | None = None
+    locations: list[str] | None = None
+
+    @field_validator("locations")
+    @classmethod
+    def _check_locations(cls, v: list[str] | None) -> list[str] | None:
+        if v is None:
+            return v
+        names = [x.strip() for x in v]
+        if not 1 <= len(names) <= 12:
+            raise ValueError("locations: 1 to 12 items")
+        if any(not n or len(n) > 40 for n in names):
+            raise ValueError("locations: non-empty, max 40 characters")
+        if len({n.lower() for n in names}) != len(names):
+            raise ValueError("locations: must be unique")
+        return names
+
+
+DEFAULT_LOCATIONS = ["Актовый зал", "Буфет", "Сцена", "Балкон", "Вход"]
 
 
 class Event(BaseModel):
@@ -35,6 +53,7 @@ class Event(BaseModel):
     organizer_ids: list[str]
     created_at: str
     attendee_count: int
+    locations: list[str] = Field(default_factory=lambda: list(DEFAULT_LOCATIONS))
     join_path: str  # "/#/join/<code>", the hash route the frontend serves
     join_url: str  # PUBLIC_URL + join_path, what the QR code encodes
 
@@ -98,7 +117,37 @@ class MutualOut(BaseModel):
 class MeOut(BaseModel):
     profile: Profile
     system_role: SystemRole
+    contact: str | None = None
     events: list[Event]
+    # event id -> own current location (only fresh ones, under 90 minutes old)
+    locations: dict[str, "LocationOut"] = Field(default_factory=dict)
+
+
+class MePatch(BaseModel):
+    profile: ProfileIn
+    contact: str | None = Field(default=None, max_length=80)
+
+
+class LocationIn(BaseModel):
+    location: str | None = None
+
+
+class LocationOut(BaseModel):
+    location: str | None = None
+    at: str | None = None
+
+
+class LocationCount(BaseModel):
+    name: str
+    count: int
+
+
+class OpenEvent(BaseModel):
+    code: str
+    title: str
+    date: str
+    venue: str
+    attendee_count: int
 
 
 class GoalCount(BaseModel):
@@ -118,3 +167,6 @@ class Stats(BaseModel):
     attendees: int
     by_goal: list[GoalCount]
     hints: list[Hint]
+
+
+MeOut.model_rebuild()

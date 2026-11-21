@@ -5,7 +5,9 @@ import { AdminPage } from "./pages/AdminPage";
 import { DesignPage } from "./pages/DesignPage";
 import { EventJoinPage } from "./pages/EventJoinPage";
 import { EventPage } from "./pages/EventPage";
+import { EventsHubPage } from "./pages/EventsHubPage";
 import { FindPage } from "./pages/FindPage";
+import { PinPage } from "./pages/PinPage";
 import { MapPage } from "./pages/MapPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { ScreenPage } from "./pages/ScreenPage";
@@ -26,7 +28,8 @@ export default function App() {
 
   useEffect(() => {
     const titles: Record<RouteName, string> = {
-      find: t.title,
+      find: t.navFind,
+      try: t.title,
       join: t.joinTitle,
       "event-join": t.joinTitle,
       event: t.eventResults,
@@ -35,6 +38,7 @@ export default function App() {
       map: t.mapTitle,
       design: "Design system",
       admin: t.adminTitle,
+      pin: t.pinTitle,
     };
     document.title = `${titles[route.name]} · Meetup Matchmaker`;
   }, [route, t]);
@@ -45,7 +49,7 @@ export default function App() {
     { name: "me", label: t.navMe },
   ];
   const active: RouteName =
-    route.name === "join" ? "find" : route.name === "event" || route.name === "event-join" ? "me" : route.name;
+    route.name === "join" || route.name === "pin" || route.name === "try" ? "find" : route.name === "event" || route.name === "event-join" ? "me" : route.name;
   const projector = route.name === "screen";
 
   return (
@@ -73,14 +77,16 @@ export default function App() {
       )}
 
       <main>
-        {(route.name === "find" || route.name === "join") && (
+        {route.name === "find" && <EventsHubPage t={t} go={go} />}
+        {(route.name === "try" || route.name === "join") && (
           <FindPage t={t} matcher={matcher} join={route.name === "join"} onShowMap={() => go({ name: "map" })} />
         )}
+        {route.name === "pin" && <PinPage t={t} go={go} />}
         {route.name === "event-join" && <EventJoinPage key={route.code} t={t} lang={lang} code={route.code!} go={go} />}
         {route.name === "event" && <EventPage key={route.code} t={t} lang={lang} code={route.code!} go={go} />}
         {route.name === "screen" && <ScreenPage t={t} code={route.code!} go={go} />}
         {route.name === "me" && <ProfilePage t={t} lang={lang} setLang={setLang} theme={theme} setTheme={setTheme} go={go} />}
-        {route.name === "map" && <MapPage t={t} matcher={matcher} onFind={() => go({ name: "find" })} />}
+        {route.name === "map" && <MapPage t={t} matcher={matcher} onFind={() => go({ name: "try" })} />}
         {route.name === "design" && <DesignPage t={t} />}
         {route.name === "admin" && <AdminPage key={route.code ?? "list"} t={t} eventId={route.code} go={go} />}
       </main>

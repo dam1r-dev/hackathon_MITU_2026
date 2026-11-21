@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { api, ApiError } from "../api";
+import { ProfileForm } from "../components/ProfileForm";
 import { Avatar, Button, Chip, GoalBadge, Segmented, Spinner } from "../components/ui";
 import { LANGS, type Dict } from "../i18n";
 import { session } from "../session";
 import { href, type Route, type Theme } from "../state";
-import type { Lang, MeOut } from "../types";
+import type { Lang, MeOut, ProfileIn } from "../types";
 
 type Props = { t: Dict; lang: Lang; setLang: (l: Lang) => void; theme: Theme; setTheme: (t: Theme) => void; go: (r: Route) => void };
 
@@ -12,6 +13,35 @@ type Props = { t: Dict; lang: Lang; setLang: (l: Lang) => void; theme: Theme; se
 export function ProfilePage({ t, lang, setLang, theme, setTheme, go }: Props) {
   const [me, setMe] = useState<MeOut | null>(null);
   const [state, setState] = useState<"loading" | "ok" | "none" | "error">(session.get() ? "loading" : "none");
+
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState<ProfileIn | null>(null);
+  const [contact, setContact] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(false);
+
+  function startEdit() {
+    if (!me) return;
+    const { id: _id, ...rest } = me.profile; // eslint-disable-line @typescript-eslint/no-unused-vars
+    setForm(rest);
+    setContact(me.contact ?? "");
+    setSaveError(false);
+    setEditing(true);
+  }
+
+  async function save() {
+    if (!form) return;
+    setSaving(true);
+    setSaveError(false);
+    try {
+      setMe(await api.updateMe({ ...form, lang }, contact.trim()));
+      setEditing(false);
+    } catch {
+      setSaveError(true);
+    } finally {
+      setSaving(false);
+    }
+  }
 
   useEffect(() => {
     if (!session.get()) return;
@@ -73,6 +103,33 @@ export function ProfilePage({ t, lang, setLang, theme, setTheme, go }: Props) {
     );
 
   const p = me.profile;
+
+  if (editing && form)
+    return (
+      <div className="page">
+        <header className="hero">
+          <h1>{t.editProfile}</h1>
+        </header>
+        <ProfileForm t={t} value={form} onChange={setForm} onSubmit={save} loading={saving} submitLabel={t.saveProfile} hideExample>
+          <div className="field">
+            <label className="field-label" htmlFor="f-contact">
+              {t.contact}
+            </label>
+            <input id="f-contact" maxLength={80} autoComplete="off" placeholder="@telegram" value={contact} onChange={(e) => setContact(e.target.value)} />
+            <span className="field-hint">{t.contactHint}</span>
+          </div>
+        </ProfileForm>
+        {saveError && (
+          <p className="alert" role="alert">
+            {t.error}
+          </p>
+        )}
+        <Button type="button" variant="link" className="forget" onClick={() => setEditing(false)}>
+          {t.cancel}
+        </Button>
+      </div>
+    );
+
   return (
     <div className="page">
       <header className="hero">
@@ -116,6 +173,12 @@ export function ProfilePage({ t, lang, setLang, theme, setTheme, go }: Props) {
             </div>
           </div>
         )}
+
+        <div className="edit-actions">
+          <Button type="button" variant="ghost" size="sm" onClick={startEdit}>
+            ✎ {t.editProfile}
+          </Button>
+        </div>
 
         {settings}
       </section>

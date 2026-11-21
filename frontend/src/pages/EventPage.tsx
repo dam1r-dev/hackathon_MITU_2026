@@ -1,13 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { api, ApiError } from "../api";
 import { MatchCard } from "../components/MatchCard";
-import { Avatar, Button, Spinner } from "../components/ui";
+import { GoalBars, RoomMap } from "../components/RoomMap";
+import { Avatar, Button, Segmented, Spinner } from "../components/ui";
 import type { Dict } from "../i18n";
 import { sentMeets, session } from "../session";
 import type { Route } from "../state";
-import type { EventInfo, Lang, Match, MutualOut } from "../types";
+import { GOALS, type EventInfo, type GraphNode, type Lang, type LocationCount, type Match, type MutualOut, type PublicStats } from "../types";
 
 const POLL_MS = 8000;
+const VENUE_MS = 20000;
+
+type Tab = "people" | "venue" | "room";
 
 type Props = { t: Dict; lang: Lang; code: string; go: (r: Route) => void };
 
@@ -22,6 +26,12 @@ export function EventPage({ t, lang, code, go }: Props) {
   const [fresh, setFresh] = useState<Set<string>>(new Set());
   const [busyId, setBusyId] = useState<string | null>(null);
   const [state, setState] = useState<"ok" | "error" | "outside">(me ? "ok" : "outside");
+  const [tab, setTab] = useState<Tab>("people");
+  const [counts, setCounts] = useState<LocationCount[]>([]);
+  const [myLoc, setMyLoc] = useState<string | null>(null);
+  const [locBusy, setLocBusy] = useState(false);
+  const [nodes, setNodes] = useState<GraphNode[] | null>(null);
+  const [stats, setStats] = useState<PublicStats | null>(null);
   const known = useRef<Set<string> | null>(null);
 
   const apply = (ms: Match[], took: number) => {
@@ -64,6 +74,59 @@ export function EventPage({ t, lang, code, go }: Props) {
       window.clearTimeout(timer);
     };
   }, [code, lang]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Venue: live counts and my own location, every 20 s.
+  useEffect(() => {
+    if (!me) return;
+    let alive = true;
+    const loadCounts = () =>
+      api
+        .eventLocations(code)
+        .then((c) => alive && setCounts(c))
+        .catch(() => {});
+    api
+      .me()
+      .then((m) => {
+        const ev = m.events.find((e) => e.code === code);
+        if (alive && ev) setMyLoc(m.locations[ev.id]?.location ?? null);
+      })
+      .catch(() => {});
+    loadCounts();
+    const id = window.setInterval(loadCounts, VENUE_MS);
+    return () => {
+      alive = false;
+      window.clearInterval(id);
+    };
+  }, [code]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Room: map and goal statistics, loaded when the tab is open and refreshed every 20 s.
+  useEffect(() => {
+    if (!me || tab !== "room") return;
+    let alive = true;
+    const load = () => {
+      api.eventGraph(code).then((g) => alive && setNodes(g.nodes)).catch(() => {});
+      api.eventStats(code).then((s) => alive && setStats(s)).catch(() => {});
+    };
+    load();
+    const id = window.setInterval(load, VENUE_MS);
+    return () => {
+      alive = false;
+      window.clearInterval(id);
+    };
+  }, [code, tab]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function pickLocation(name: string | null) {
+    setLocBusy(true);
+    try {
+      const res = await api.setLocation(code, name);
+      setMyLoc(res.location);
+      setCounts(await api.eventLocations(code));
+    } catch {
+      setState("error");
+    } finally {
+      setLocBusy(false);
+    }
+  }
 
   async function wantMeet(targetId: string) {
     setBusyId(targetId);
@@ -127,7 +190,91 @@ export function EventPage({ t, lang, code, go }: Props) {
         </p>
       )}
 
-      {mutual.length > 0 && (
+      <div className="event-tabs">
+        <Segmented
+          label={t.eventResults}
+          value={tab}
+          onChange={setTab}
+          options={[
+            { value: "people", label: t.tabPeople },
+            { value: "venue", label: t.tabVenue },
+            { value: "room", label: t.tabRoom },
+          ]}
+        />
+      </div>
+
+      {tab === "venue" && (
+        <section className="venue" aria-live="polite">
+          <div className="card">
+            <h2 className="card-title">{t.whereNow}</h2>
+            <div className="loc-picker">
+              {counts.map((c) => (
+                <button
+                  key={c.name}
+                  type="button"
+                  className="loc-chip"
+                  aria-pressed={myLoc === c.name}
+                  disabled={locBusy}
+                  onClick={() => pickLocation(c.name)}
+                >
+                  📍 {c.name}
+                </button>
+              ))}
+              <button type="button" className="loc-chip loc-hide" disabled={locBusy || !myLoc} onClick={() => pickLocation(null)}>
+                {t.hideMe}
+              </button>
+            </div>
+          </div>
+          <div className="venue-grid">
+            {counts.map((c) => {
+              const here = (matches ?? []).filter((m) => m.location === c.name);
+              const mine = myLoc === c.name;
+              return (
+                <div key={c.name} className="venue-tile" data-mine={mine || undefined}>
+                  <div className="venue-name">{c.name}</div>
+                  <div className="venue-count">
+                    <strong className="mono">{c.count}</strong> <span className="muted">{t.hereNow}</span>
+                  </div>
+                  <div className="venue-people">
+                    {here.map((m) => (
+                      <span key={m.profile.id} title={m.profile.name}>
+                        <Avatar name={m.profile.name} goal={m.profile.goal} size={30} />
+                      </span>
+                    ))}
+                    {mine && <span className="tag venue-me">{t.youAreHere}</span>}
+                    {!mine && here.length === 0 && c.count === 0 && <span className="muted small">{t.nobodyHere}</span>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {tab === "room" && (
+        <section className="room">
+          {nodes === null ? (
+            <div className="map skeleton" />
+          ) : (
+            <RoomMap
+              nodes={nodes}
+              meId={me?.memberId}
+              highlights={(matches ?? []).map((m) => ({ id: m.profile.id, score: m.score }))}
+              meLabel={t.you}
+              label={t.mapTitle}
+            />
+          )}
+          <div className="card">
+            <h2 className="card-title">{t.roomWho}</h2>
+            <GoalBars
+              label={t.byGoal}
+              counts={GOALS.map((g) => ({ goal: g, label: t.goals[g], n: stats?.by_goal.find((x) => x.goal === g)?.count ?? 0 }))}
+            />
+          </div>
+        </section>
+      )}
+
+      {tab === "people" && mutual.length > 0 && (
         <section className="card mutual" aria-live="polite">
           <h2 className="card-title">🎉 {t.mutualTitle}</h2>
           <ul>
@@ -145,7 +292,7 @@ export function EventPage({ t, lang, code, go }: Props) {
         </section>
       )}
 
-      {!matches && state === "ok" && (
+      {tab === "people" && !matches && state === "ok" && (
         <div className="results">
           {[0, 1, 2].map((i) => (
             <div key={i} className="card skeleton-card" />
@@ -156,7 +303,7 @@ export function EventPage({ t, lang, code, go }: Props) {
         </div>
       )}
 
-      {matches && (
+      {tab === "people" && matches && (
         <section className="results" aria-live="polite">
           {matches.length < 5 && <p className="empty">{t.fewYet}</p>}
           {matches.map((m, i) => {

@@ -4,19 +4,22 @@ import type { Lang, Match, ProfileIn } from "./types";
 
 /**
  * Hash routes (work on any static host and inside the QR link):
- *   #/              find (quick demo, no event)
+ *   #/              events hub (open events, enter a code)
+ *   #/try           old quick demo: no event, top 5 from everyone
  *   #/join          quick demo that also stores the profile
  *   #/join/<code>   event landing + onboarding (the QR target)
  *   #/e/<code>      my top 5 inside an event
  *   #/screen/<code> projector: big QR, live counter, room map   (#/qr = last event or DEMO)
+ *   #/pin           type the 6-digit code from the projector (also the plain path /pin)
  *   #/me            my profile
  *   #/admin         admin / organizer: events      #/admin/<event id>: one event
  *   #/map, #/design
  */
-export type RouteName = "find" | "join" | "event-join" | "event" | "screen" | "me" | "map" | "design" | "admin";
+export type RouteName = "find" | "try" | "join" | "event-join" | "event" | "screen" | "me" | "map" | "design" | "admin" | "pin";
 export type Route = { name: RouteName; code?: string };
 
 function parse(): Route {
+  if (window.location.pathname.replace(/\/+$/, "") === "/pin" && !window.location.hash.replace(/^#\/?/, "")) return { name: "pin" };
   const [head = "", arg] = window.location.hash.replace(/^#\/?/, "").split("?")[0].split("/");
   const code = arg ? decodeURIComponent(arg).toUpperCase() : undefined;
   switch (head) {
@@ -29,6 +32,8 @@ function parse(): Route {
     case "screen":
     case "qr":
       return { name: "screen", code: code ?? storageGet("lastEvent") ?? "DEMO" };
+    case "pin":
+    case "try":
     case "me":
     case "map":
     case "design":
@@ -72,7 +77,15 @@ export function useRoute(): [Route, (r: Route) => void] {
     window.addEventListener("hashchange", on);
     return () => window.removeEventListener("hashchange", on);
   }, []);
-  return [route, (r) => (window.location.hash = href(r).slice(1))];
+  return [
+    route,
+    (r) => {
+      // Leaving the plain /pin path: hash routes live at the site root.
+      if (window.location.pathname === "/pin") window.history.replaceState(null, "", "/");
+      window.location.hash = href(r).slice(1);
+      setRoute(parse());
+    },
+  ];
 }
 
 export function storageGet(key: string): string | null {

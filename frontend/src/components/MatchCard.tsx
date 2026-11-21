@@ -14,6 +14,9 @@ type Props = {
   isNew?: boolean;
 };
 
+/** Whole minutes since an ISO time (never negative). */
+export const minutesAgo = (iso: string) => Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 60000));
+
 export function MatchCard({ t, m, rank, busy, onFeedback, meet, isNew }: Props) {
   const [copied, setCopied] = useState(false);
   const p = m.profile;
@@ -39,6 +42,12 @@ export function MatchCard({ t, m, rank, busy, onFeedback, meet, isNew }: Props) 
             {p.role} · {t.years(p.experience_years)}
           </div>
           <GoalBadge goal={p.goal}>{t.goals[p.goal]}</GoalBadge>
+          {m.location && (
+            <div className="where">
+              📍 {m.location}
+              {m.location_at && ` · ${t.minAgo(minutesAgo(m.location_at))}`}
+            </div>
+          )}
         </div>
         <ScoreRing value={m.score} label={t.match} />
       </header>

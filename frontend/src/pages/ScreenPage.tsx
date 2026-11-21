@@ -4,7 +4,7 @@ import { GoalBars, RoomMap } from "../components/RoomMap";
 import { Button } from "../components/ui";
 import type { Dict } from "../i18n";
 import { storageSet, type Route } from "../state";
-import { GOALS, type EventInfo, type GraphNode } from "../types";
+import { GOALS, type EventInfo, type GraphNode, type LocationCount } from "../types";
 
 const POLL_MS = 4000;
 
@@ -15,7 +15,37 @@ export function ScreenPage({ t, code, go }: Props) {
   const [event, setEvent] = useState<EventInfo | null>(null);
   const [nodes, setNodes] = useState<GraphNode[] | null>(null);
   const [state, setState] = useState<"ok" | "notfound" | "error">("ok");
+  const [places, setPlaces] = useState<LocationCount[]>([]);
   const [codeInput, setCodeInput] = useState(code);
+  const [pin, setPin] = useState<{ pin: string; left: number } | null>(null);
+
+  // Rotating join PIN, shown only to admin / organizer (a 401/403 hides the block).
+  useEffect(() => {
+    let alive = true;
+    setPin(null);
+    const load = () =>
+      api
+        .eventPin(code)
+        .then((r) => alive && setPin({ pin: r.pin, left: r.expires_in }))
+        .catch(() => alive && setPin(null));
+    load();
+    const refetch = window.setInterval(load, 60000);
+    const tick = window.setInterval(() => {
+      setPin((p) => {
+        if (!p) return p;
+        if (p.left <= 1) {
+          load();
+          return { ...p, left: 5 }; // retry soon if the refetch is slow
+        }
+        return { ...p, left: p.left - 1 };
+      });
+    }, 1000);
+    return () => {
+      alive = false;
+      window.clearInterval(refetch);
+      window.clearInterval(tick);
+    };
+  }, [code]);
 
   useEffect(() => {
     let alive = true;
@@ -33,6 +63,7 @@ export function ScreenPage({ t, code, go }: Props) {
     const load = async () => {
       try {
         const g = await api.eventGraph(code);
+        api.eventLocations(code).then((c) => alive && setPlaces(c)).catch(() => {});
         if (!alive) return;
         setNodes(g.nodes);
         setState("ok");
@@ -90,6 +121,19 @@ export function ScreenPage({ t, code, go }: Props) {
           <span className="muted">{t.screenCode}</span> <strong className="mono">{code}</strong>
         </p>
         {event && <p className="qr-url mono">{event.join_url}</p>}
+        {pin && (
+          <div className="screen-pin">
+            <p className="screen-pin-hint">
+              {t.screenLaptop} <strong className="mono">{window.location.host}/pin</strong>
+            </p>
+            <p className="screen-pin-digits mono" aria-label={pin.pin}>
+              {pin.pin.slice(0, 3)} {pin.pin.slice(3)}
+            </p>
+            <p className="screen-pin-left muted mono">
+              {t.pinNewIn} {Math.floor(pin.left / 60)}:{String(pin.left % 60).padStart(2, "0")}
+            </p>
+          </div>
+        )}
         <div className="screen-counter" aria-live="polite">
           <span className="live-dot" data-error={state === "error"} />
           <strong className="mono">{nodes?.length ?? "–"}</strong>
@@ -108,6 +152,15 @@ export function ScreenPage({ t, code, go }: Props) {
         )}
         <div className="card">
           <GoalBars counts={counts} label={t.byGoal} />
+          {places.some((p) => p.count > 0) && (
+            <ul className="screen-venue" aria-label={t.showOnProjector}>
+              {places.map((p) => (
+                <li key={p.name}>
+                  {p.name} <strong className="mono">{p.count}</strong>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
         {switcher}
       </section>

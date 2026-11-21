@@ -31,6 +31,13 @@ export type Dict = {
   // projector
   screenScan: string;
   screenCode: string;
+  pinTitle: string;
+  pinSubmit: string;
+  pinWrong: string;
+  pinLink: string;
+  pinLinkCta: string;
+  screenLaptop: string;
+  pinNewIn: string;
   screenEmpty: string;
   inRoom: string;
   // profile
@@ -136,12 +143,38 @@ export type Dict = {
   balance: string;
   hintScarce: (scarce: string, sc: number, plenty: string, pc: number) => string;
   balanced: string;
+  hubTitle: string;
+  hubSub: string;
+  hubCodeTitle: string;
+  hubCodeSub: string;
+  hubCodeBtn: string;
+  hubOpenTitle: string;
+  hubNone: string;
+  hubJoin: string;
+  hubOpenMine: string;
+  tabPeople: string;
+  tabVenue: string;
+  tabRoom: string;
+  whereNow: string;
+  hideMe: string;
+  hereNow: string;
+  youAreHere: string;
+  nobodyHere: string;
+  minAgo: (n: number) => string;
+  roomWho: string;
+  editProfile: string;
+  saveProfile: string;
+  cancel: string;
+  venueLocations: string;
+  venueLocationsHint: string;
+  saved: string;
+  showOnProjector: string;
   goals: Record<Goal, string>;
   goalHints: Record<Goal, string>;
 };
 
 const en: Dict = {
-  navFind: "Find people",
+  navFind: "Events",
   navMap: "Room map",
   navMe: "Profile",
   navScreen: "Projector screen",
@@ -167,6 +200,13 @@ const en: Dict = {
   notInEvent: "You are not in this event yet.",
   screenScan: "Scan to join",
   screenCode: "Event code",
+  pinTitle: "Enter event code",
+  pinSubmit: "Join",
+  pinWrong: "Code is wrong or expired — check the screen",
+  pinLink: "Have a code from the screen?",
+  pinLinkCta: "Enter code",
+  screenLaptop: "From a laptop:",
+  pinNewIn: "new code in",
   screenEmpty: "Nobody yet. Be the first to scan!",
   inRoom: "in the room",
   meTitle: "My profile",
@@ -283,10 +323,36 @@ const en: Dict = {
     find_cofounder: "Meet future co-founders",
     exchange_experience: "Meet peers to share with",
   },
+  hubTitle: "Networking at Qazaq IT events",
+  hubSub: "Pick an event, tell us about yourself in 60 seconds and meet the right people.",
+  hubCodeTitle: "Enter code from the screen",
+  hubCodeSub: "At the event? Type the 6-digit code from the projector.",
+  hubCodeBtn: "Enter code",
+  hubOpenTitle: "Open events",
+  hubNone: "No open events yet. Check back soon.",
+  hubJoin: "Join",
+  hubOpenMine: "Open my matches",
+  tabPeople: "My people",
+  tabVenue: "Venue",
+  tabRoom: "Room",
+  whereNow: "Where are you now?",
+  hideMe: "Hide me",
+  hereNow: "here now",
+  youAreHere: "You are here",
+  nobodyHere: "Nobody yet",
+  minAgo: (n) => n < 1 ? 'just now' : `${n} min ago`,
+  roomWho: "Who is looking for what",
+  editProfile: "Edit profile",
+  saveProfile: "Save",
+  cancel: "Cancel",
+  venueLocations: "Venue locations",
+  venueLocationsHint: "One place per line, up to 12. Guests tell where they are.",
+  saved: "Saved",
+  showOnProjector: "Now in the venue",
 };
 
 const ru: Dict = {
-  navFind: "Подбор",
+  navFind: "События",
   navMap: "Карта зала",
   navMe: "Профиль",
   navScreen: "Экран для проектора",
@@ -312,6 +378,13 @@ const ru: Dict = {
   notInEvent: "Вы ещё не участник этого мероприятия.",
   screenScan: "Отсканируйте, чтобы присоединиться",
   screenCode: "Код мероприятия",
+  pinTitle: "Введите код события",
+  pinSubmit: "Войти",
+  pinWrong: "Код неверный или устарел — проверьте экран",
+  pinLink: "Есть код с экрана?",
+  pinLinkCta: "Ввести код",
+  screenLaptop: "С ноутбука:",
+  pinNewIn: "новый код через",
   screenEmpty: "Пока никого. Отсканируйте первым!",
   inRoom: "в зале",
   meTitle: "Мой профиль",
@@ -433,10 +506,36 @@ const ru: Dict = {
     find_cofounder: "Покажем будущих кофаундеров",
     exchange_experience: "Покажем коллег для обмена опытом",
   },
+  hubTitle: "Нетворкинг на событиях Qazaq IT",
+  hubSub: "Выберите событие, расскажите о себе за 60 секунд и найдите нужных людей.",
+  hubCodeTitle: "Введите код с экрана",
+  hubCodeSub: "Вы на месте? Введите 6-значный код с проектора.",
+  hubCodeBtn: "Ввести код",
+  hubOpenTitle: "Открытые события",
+  hubNone: "Пока нет открытых событий. Загляните позже.",
+  hubJoin: "Присоединиться",
+  hubOpenMine: "Открыть мои совпадения",
+  tabPeople: "Мои люди",
+  tabVenue: "Площадка",
+  tabRoom: "Зал",
+  whereNow: "Где вы сейчас?",
+  hideMe: "Скрыть меня",
+  hereNow: "сейчас здесь",
+  youAreHere: "Вы здесь",
+  nobodyHere: "Пока никого",
+  minAgo: (n) => n < 1 ? 'только что' : `${n} мин назад`,
+  roomWho: "Кто что ищет",
+  editProfile: "Редактировать профиль",
+  saveProfile: "Сохранить",
+  cancel: "Отмена",
+  venueLocations: "Места на площадке",
+  venueLocationsHint: "По одному месту в строке, до 12. Гости отмечают, где они.",
+  saved: "Сохранено",
+  showOnProjector: "Сейчас на площадке",
 };
 
 const kk: Dict = {
-  navFind: "Іздеу",
+  navFind: "Іс-шаралар",
   navMap: "Зал картасы",
   navMe: "Профиль",
   navScreen: "Проектор экраны",
@@ -462,6 +561,13 @@ const kk: Dict = {
   notInEvent: "Сіз әлі бұл іс-шараның қатысушысы емессіз.",
   screenScan: "Қосылу үшін сканерлеңіз",
   screenCode: "Іс-шара коды",
+  pinTitle: "Іс-шара кодын енгізіңіз",
+  pinSubmit: "Кіру",
+  pinWrong: "Код қате немесе ескірген — экранды тексеріңіз",
+  pinLink: "Экрандағы код бар ма?",
+  pinLinkCta: "Кодты енгізу",
+  screenLaptop: "Ноутбуктен:",
+  pinNewIn: "жаңа код",
   screenEmpty: "Әзірге ешкім жоқ. Бірінші болып сканерлеңіз!",
   inRoom: "залда",
   meTitle: "Менің профилім",
@@ -578,6 +684,32 @@ const kk: Dict = {
     find_cofounder: "Болашақ кофаундерлерді көрсетеміз",
     exchange_experience: "Тәжірибе алмасатын әріптестерді көрсетеміз",
   },
+  hubTitle: "Qazaq IT іс-шараларындағы нетворкинг",
+  hubSub: "Іс-шараны таңдаңыз, 60 секундта өзіңіз туралы айтыңыз да, қажет адамдарды табыңыз.",
+  hubCodeTitle: "Экрандағы кодты енгізіңіз",
+  hubCodeSub: "Іс-шарадасыз ба? Проектордағы 6 таңбалы кодты теріңіз.",
+  hubCodeBtn: "Кодты енгізу",
+  hubOpenTitle: "Ашық іс-шаралар",
+  hubNone: "Әзірге ашық іс-шара жоқ. Кейінірек қараңыз.",
+  hubJoin: "Қосылу",
+  hubOpenMine: "Менің сәйкестіктерімді ашу",
+  tabPeople: "Менің адамдарым",
+  tabVenue: "Алаң",
+  tabRoom: "Зал",
+  whereNow: "Қазір қайдасыз?",
+  hideMe: "Мені жасыру",
+  hereNow: "қазір осында",
+  youAreHere: "Сіз осындасыз",
+  nobodyHere: "Әзірге ешкім жоқ",
+  minAgo: (n) => n < 1 ? 'жаңа ғана' : `${n} мин бұрын`,
+  roomWho: "Кім нені іздейді",
+  editProfile: "Профильді өңдеу",
+  saveProfile: "Сақтау",
+  cancel: "Бас тарту",
+  venueLocations: "Алаңдағы орындар",
+  venueLocationsHint: "Әр жолға бір орын, 12-ге дейін. Қонақтар қайда екенін белгілейді.",
+  saved: "Сақталды",
+  showOnProjector: "Қазір алаңда",
 };
 
 export const dict: Record<Lang, Dict> = { en, ru, kk };
