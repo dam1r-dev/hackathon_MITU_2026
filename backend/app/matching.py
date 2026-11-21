@@ -3,7 +3,7 @@
 score(A, B) = sqrt(fit(A->B) * fit(B->A))
 
 fit(X->Y) is 0 unless Y's goal is the reciprocal of X's goal. Otherwise it is
-base similarity (embedding cosine plus tag overlap) times a goal factor:
+base similarity (embedding cosine, stack overlap, interest overlap) times a goal factor:
   - find_mentor / be_mentor: the mentor must have more experience than the mentee
   - find_cofounder: different stacks are better (complementary skills)
   - other goals: factor 1
@@ -66,13 +66,22 @@ def _goal_factor(x: Subject, y: Subject) -> float:
     return 1.0
 
 
+def _overlap(a: set[str], b: set[str]) -> float:
+    """Share of the smaller set found in the other one (overlap coefficient)."""
+    return len(a & b) / min(len(a), len(b)) if a and b else 0.0
+
+
 def fit(x: Subject, y: Subject) -> float:
-    """How well Y serves X's goal, 0..1. Zero when the goals are not reciprocal."""
+    """How well Y serves X's goal, 0..1. Zero when the goals are not reciprocal.
+
+    Stack overlap is weighted on its own so a shared stack beats a well-written bio
+    in a different field (a frontend job seeker should meet the frontend lead first).
+    """
     if RECIPROCAL[x.goal] != y.goal:
         return 0.0
     cos = float(np.dot(x.vec, y.vec))
     sim = min(1.0, max(0.0, (cos - 0.1) / 0.6))
-    base = 0.7 * sim + 0.3 * _jaccard(x.tags, y.tags)
+    base = 0.55 * sim + 0.3 * _overlap(x.stack, y.stack) + 0.15 * _overlap(x.tags - x.stack, y.tags - y.stack)
     return (0.05 + 0.95 * base) * _goal_factor(x, y)
 
 
@@ -172,8 +181,10 @@ class Index:
             + (texts.SHARED[lang].format(tags=", ".join(shared)) if shared else ""),
             "you_give": self._offer(viewer, lang),
             "they_give": self._offer(other, lang),
-            "icebreaker": texts.ICEBREAKER[lang].format(
-                first=other.name.split()[0], topic=(shared[0] if shared else other.role)
+            "icebreaker": (
+                texts.ICEBREAKER[lang].format(first=other.name.split()[0], topic=shared[0])
+                if shared
+                else texts.ICEBREAKER_ROLE[lang].format(first=other.name.split()[0], role=other.role)
             ),
         }
         override = self._explanations().get(f"{viewer_id}|{other.id}", {}).get(lang) if viewer_id else None

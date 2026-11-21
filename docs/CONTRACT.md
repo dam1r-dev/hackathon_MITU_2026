@@ -160,7 +160,7 @@ Any field or language may be missing. The file is re-read automatically when it 
 
 `score(A,B) = sqrt( fit(A->B) * fit(B->A) )`
 
-- `fit(A->B)` is 0 if B's goal is not in the reciprocity row for A. Otherwise `(0.05 + 0.95 * base) * goal_factor`, where `base = 0.7 * embedding_similarity + 0.3 * tag_overlap`.
+- `fit(A->B)` is 0 if B's goal is not in the reciprocity row for A. Otherwise `(0.05 + 0.95 * base) * goal_factor`, where `base = 0.55 * embedding_similarity + 0.3 * stack_overlap + 0.15 * interest_overlap` (overlap = shared items / size of the smaller set).
 - `goal_factor`: mentor pairs need the mentor to have more experience (gap 3+ years gives 1.0, no gap gives 0.35); co-founders score higher with different stacks; other goals use 1.
 - Embeddings: multilingual MiniLM through fastembed, so kk/ru/en profiles are comparable. Falls back to hashing vectors offline (same language only).
 - This is the core idea: complementary, not similar.

@@ -72,8 +72,14 @@ SHARED = {
 }
 ICEBREAKER = {
     "en": "Hi {first}! I noticed you work with {topic}. Can I ask you a couple of questions?",
-    "ru": "Привет, {first}! Заметил, что вы работаете с {topic}. Можно задать пару вопросов?",
+    "ru": "Привет, {first}! Вижу, вы работаете с {topic}. Можно задать пару вопросов?",
     "kk": "Сәлем, {first}! Сіз {topic} бағытында жұмыс істейтініңізді көрдім. Бірнеше сұрақ қоюға бола ма?",
+}
+# Used when the two people share no tag: talk about their role instead.
+ICEBREAKER_ROLE = {
+    "en": "Hi {first}! I'd love to hear about your work ({role}). Do you have a few minutes?",
+    "ru": "Привет, {first}! Интересно, как устроена ваша работа ({role}). Найдётся пара минут?",
+    "kk": "Сәлем, {first}! Сіздің жұмысыңыз ({role}) туралы білгім келеді. Бірнеше минутыңыз бар ма?",
 }
 
 
