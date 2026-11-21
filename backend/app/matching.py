@@ -6,8 +6,12 @@ fit(X->Y) is 0 unless Y's goal is the reciprocal of X's goal. Otherwise it is
 base similarity (embedding cosine, stack overlap, interest overlap) times a goal factor:
   - find_mentor / be_mentor: the mentor must have more experience than the mentee
   - find_cofounder: different stacks are better (complementary skills)
-  - hire (employer judging a candidate): the candidate's experience vs the required minimum
+  - hire (employer judging a candidate): the candidate's experience vs the required minimum,
+    and the level named in the vacancy (a junior vacancy is a weak fit for a 10-year lead,
+    a senior vacancy for someone with 1 year)
   - other goals: factor 1
+Employers may describe who they hire in words instead of a stack: the skills are then read
+from the vacancy text (`SkillReader`), so stack overlap still counts.
 The goal factor is what makes the two directions differ.
 """
 from __future__ import annotations
@@ -15,6 +19,7 @@ from __future__ import annotations
 import json
 import math
 import os
+import re
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -31,6 +36,84 @@ EXPLANATIONS_FILE = Path(
 )
 TOP_N = 5
 
+# Words people type instead of the tag (ru/kk spellings, short forms).
+ALIASES = {
+    "питон": "Python", "пайтон": "Python", "реакт": "React", "джава": "Java", "джаваскрипт": "JavaScript",
+    "тайпскрипт": "TypeScript", "кубер": "Kubernetes", "k8s": "Kubernetes", "докер": "Docker", "фигма": "Figma",
+    "golang": "Go", "голанг": "Go", "js": "JavaScript", "postgres": "PostgreSQL", "постгрес": "PostgreSQL",
+    "котлин": "Kotlin", "свифт": "Swift", "flutter": "Flutter", "флаттер": "Flutter",
+}
+BASE_SKILLS = [
+    "Python", "TypeScript", "JavaScript", "React", "Vue", "Angular", "Next.js", "Node.js", "Go", "Java", "Kotlin",
+    "Swift", "Dart", "Flutter", "C#", "C++", "PHP", "Ruby", "SQL", "PostgreSQL", "Docker", "Kubernetes", "AWS",
+    "Figma", "PyTorch", "Spark", "Airflow", "Linux", "Selenium", "Playwright", "Cypress",
+]
+
+
+class SkillReader:
+    """Finds known stack tags in free text ("Junior React developer" -> React)."""
+
+    def __init__(self) -> None:
+        self.names: dict[str, str] = {}
+        self._long: re.Pattern | None = None
+        self._short: re.Pattern | None = None
+        self.learn(BASE_SKILLS)
+
+    def learn(self, tags) -> None:
+        for t in tags:
+            if t and t.lower() not in self.names:
+                self.names[t.lower()] = t
+                self._long = self._short = None
+
+    def _compile(self) -> None:
+        def rx(words, flags):
+            alt = "|".join(re.escape(w) for w in sorted(words, key=len, reverse=True))
+            return re.compile(rf"(?<![\w#+.])({alt})(?![\w#+])", flags) if alt else None
+
+        canon = {v for v in self.names.values()}
+        # Two-letter tags (Go, R) must keep their case, or "go" in a sentence would count.
+        self._long = rx([k for k in self.names if len(k) > 2] + list(ALIASES), re.IGNORECASE)
+        self._short = rx([v for v in canon if len(v) <= 2], 0)
+
+    def read(self, text: str) -> list[str]:
+        if not text:
+            return []
+        if self._long is None and self._short is None:
+            self._compile()
+        found: dict[str, None] = {}
+        for pat in (self._long, self._short):
+            if pat is None:
+                continue
+            for m in pat.finditer(text):
+                w = m.group(1)
+                found[ALIASES.get(w.lower()) or self.names.get(w.lower(), w)] = None
+        return list(found)
+
+
+SKILLS = SkillReader()
+
+
+def effective_stack(p: ProfileIn) -> list[str]:
+    """The stack, or for an employer without one, the skills named in the vacancy."""
+    if p.stack or p.goal != "hire":
+        return list(p.stack)
+    return SKILLS.read(f"{p.wanted_role or ''}. {p.role}. {p.about}")
+
+
+_JUNIOR = re.compile(r"junior|джун|intern|стаж[её]р|trainee|начинающ", re.IGNORECASE)
+_SENIOR = re.compile(r"senior|сеньор|синьор|(?<!\w)(?:team\s?)?lead(?!\w)|тимлид|(?<!\w)лид(?!\w)|principal|архитектор", re.IGNORECASE)
+
+
+def vacancy_level(p: ProfileIn) -> str | None:
+    if p.goal != "hire":
+        return None
+    text = p.wanted_role or ""
+    if _SENIOR.search(text):
+        return "senior"
+    if _JUNIOR.search(text):
+        return "junior"
+    return None
+
 
 def profile_text(p: ProfileIn) -> str:
     if p.goal == "hire":  # the vacancy, not the employer
@@ -45,11 +128,12 @@ class Subject:
     stack: set[str]
     tags: set[str]
     vec: np.ndarray
+    level: str | None = None  # vacancy level for employers: "junior" / "senior"
 
 
 def _subject(p: ProfileIn, vec: np.ndarray) -> Subject:
-    stack = {t.lower() for t in p.stack}
-    return Subject(p.goal, p.experience_years, stack, stack | {t.lower() for t in p.interests}, vec)
+    stack = {t.lower() for t in effective_stack(p)}
+    return Subject(p.goal, p.experience_years, stack, stack | {t.lower() for t in p.interests}, vec, vacancy_level(p))
 
 
 def _jaccard(a: set[str], b: set[str]) -> float:
@@ -67,7 +151,12 @@ def _goal_factor(x: Subject, y: Subject) -> float:
     if x.goal == "find_cofounder":
         return 0.6 + 0.4 * (1.0 - _jaccard(x.stack, y.stack))
     if x.goal == "hire" and y.goal == "find_job":
-        return 1.0 if y.exp >= x.exp else max(0.4, 1.0 - 0.2 * (x.exp - y.exp))
+        f = 1.0 if y.exp >= x.exp else max(0.4, 1.0 - 0.2 * (x.exp - y.exp))
+        if x.level == "junior" and y.exp >= 6:
+            f *= 0.75  # overqualified for a junior vacancy
+        elif x.level == "senior" and y.exp < 3:
+            f *= 0.5
+        return f
     return 1.0
 
 
@@ -119,6 +208,7 @@ class Index:
     def add_many(self, new: list[Profile]) -> None:
         if not new:
             return
+        SKILLS.learn(t for p in new for t in p.stack)
         vecs = self.embedder.encode([profile_text(p) for p in new])
         self.mat = vecs if len(self.profiles) == 0 else np.vstack([self.mat, vecs])
         self.profiles.extend(new)
@@ -129,6 +219,7 @@ class Index:
         i = next((k for k, x in enumerate(self.profiles) if x.id == p.id), None)
         if i is None:
             return False
+        SKILLS.learn(p.stack)
         self.mat[i] = self.embedder.encode([profile_text(p)])[0]
         self.profiles[i] = p
         self._layout = None
@@ -256,6 +347,8 @@ class Index:
         start = time.perf_counter()
         if not self.profiles:
             return 0, []
+        if viewer.goal == "hire" and not viewer.stack:
+            viewer = viewer.model_copy(update={"stack": effective_stack(viewer)})
         vvec = self.embedder.encode([profile_text(viewer)])[0]
         vs = _subject(viewer, vvec)
 
@@ -285,7 +378,7 @@ class Index:
         mine = {t.lower(): t for t in (*viewer.stack, *viewer.interests)}
         for s, i, is_similar in picks:
             p = self.profiles[i]
-            shared = [mine[t] for t in mine if t in {x.lower() for x in (*p.stack, *p.interests)}]
+            shared = [mine[t] for t in mine if t in {x.lower() for x in (*effective_stack(p), *p.interests)}]
             text = self._texts(viewer, p, lang, viewer_id, shared)
             if is_similar:
                 g = texts.GOAL[lang]

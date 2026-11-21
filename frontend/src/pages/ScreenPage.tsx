@@ -165,10 +165,6 @@ export function ScreenPage({ t, code, go }: Props) {
         {event && eventWhen(event) && <p className="muted">{eventWhen(event)}</p>}
         <p className="screen-scan">{t.screenScan}</p>
         <div className="qr-frame">{event && <img src={api.eventQrUrl(event.code)} alt={event.join_url} />}</div>
-        <p className="screen-code">
-          <span className="muted">{t.screenCode}</span> <strong className="mono">{code}</strong>
-        </p>
-        {event && <p className="qr-url mono">{event.join_url}</p>}
         {pin && (
           <div className="screen-pin">
             <p className="screen-pin-hint">
