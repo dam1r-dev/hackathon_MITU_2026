@@ -10,12 +10,14 @@ import logging
 import os
 import secrets
 import threading
+import time
 
 import httpx
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 
 from .api_events import Auth, auth, need_member
 from .ctx import ctx
+from .identity import contact_of
 
 log = logging.getLogger("telegram")
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
@@ -60,9 +62,20 @@ def enabled() -> bool:
 
 def _data() -> dict:
     d = ctx.state.data
-    d.setdefault("tg_links", {})  # link code -> member_id
+    d.setdefault("tg_links", {})  # link code -> {"member_id", "created"}
     d.setdefault("tg_chats", {})  # member_id -> chat_id
+    d.setdefault("tg_users", {})  # member_id -> {"chat_id", "username", "first_name"}
     return d
+
+
+CODE_TTL = 15 * 60
+
+
+def _drop_stale_codes(d: dict) -> None:
+    """Forget expired codes and codes from before one-time codes existed (plain member id)."""
+    now = time.time()
+    for c in [c for c, r in d["tg_links"].items() if not isinstance(r, dict) or now - r.get("created", 0) > CODE_TTL]:
+        del d["tg_links"][c]
 
 
 def _lang(member_id: str) -> str:
@@ -96,20 +109,34 @@ def notify(member_id: str, key: str, **params: str) -> None:
 
 @router.get("/link")
 def link(a: Auth = Depends(auth)) -> dict:
-    """{enabled, linked, url}: url opens the bot with a one-time start code for this member."""
+    """{enabled, linked, username, url}: url opens the bot with a fresh one-time code (15 min) for this member."""
     member_id = need_member(a)
     if not enabled() or not _bot_username:
-        return {"enabled": False, "linked": False, "url": None}
+        return {"enabled": False, "linked": False, "username": None, "url": None}
     st = ctx.state
     with st.lock:
         d = _data()
+        _drop_stale_codes(d)
+        d["tg_links"] = {c: r for c, r in d["tg_links"].items() if r["member_id"] != member_id}
+        code = secrets.token_urlsafe(12)
+        d["tg_links"][code] = {"member_id": member_id, "created": time.time()}
+        st.save()
         linked = member_id in d["tg_chats"]
-        code = next((c for c, m in d["tg_links"].items() if m == member_id), None)
-        if not code:
-            code = secrets.token_urlsafe(12)
-            d["tg_links"][code] = member_id
-            st.save()
-    return {"enabled": True, "linked": linked, "url": f"https://t.me/{_bot_username}?start={code}"}
+        username = (d["tg_users"].get(member_id) or {}).get("username") if linked else None
+    return {"enabled": True, "linked": linked, "username": username, "url": f"https://t.me/{_bot_username}?start={code}"}
+
+
+@router.delete("/link", status_code=204)
+def unlink(a: Auth = Depends(auth)) -> Response:
+    member_id = need_member(a)
+    st = ctx.state
+    with st.lock:
+        d = _data()
+        d["tg_chats"].pop(member_id, None)
+        d["tg_users"].pop(member_id, None)
+        d["tg_links"] = {c: r for c, r in d["tg_links"].items() if r.get("member_id") != member_id}
+        st.save()
+    return Response(status_code=204)
 
 
 def _handle(update: dict) -> None:
@@ -118,14 +145,26 @@ def _handle(update: dict) -> None:
     chat_id = (msg.get("chat") or {}).get("id")
     if chat_id is None or not text.startswith("/start"):
         return
-    code = text.split(maxsplit=1)[1] if " " in text else ""
+    code = text.split(maxsplit=1)[1].strip() if " " in text else ""
+    sender = msg.get("from") or {}
     st = ctx.state
     with st.lock:
         d = _data()
-        member_id = d["tg_links"].get(code)
+        _drop_stale_codes(d)
+        rec = d["tg_links"].pop(code, None)  # one-time: consumed here
+        member_id = rec["member_id"] if rec else None
         if member_id:
+            # One Telegram account belongs to one member: the newest link wins.
+            for other in [m for m, c in d["tg_chats"].items() if c == chat_id and m != member_id]:
+                d["tg_chats"].pop(other, None)
+                d["tg_users"].pop(other, None)
             d["tg_chats"][member_id] = chat_id
-            st.save()
+            d["tg_users"][member_id] = {
+                "chat_id": chat_id,
+                "username": sender.get("username") or None,
+                "first_name": sender.get("first_name") or "",
+            }
+        st.save()
     if member_id:
         _send(chat_id, TEXT["linked"][_lang(member_id)])
     else:
@@ -167,10 +206,9 @@ def _name_role(member_id: str) -> tuple[str, str]:
 
 def notify_mutual(a_id: str, b_id: str) -> None:
     """Both people get the other one's name, role and contact."""
-    contacts = ctx.state.data["contacts"]
     for me, other in ((a_id, b_id), (b_id, a_id)):
         name, role = _name_role(other)
-        notify(me, "mutual", name=name, role=role, contact=contacts.get(other))
+        notify(me, "mutual", name=name, role=role, contact=contact_of(other)[0])
 
 
 def _local_time(iso: str) -> str:
@@ -242,7 +280,6 @@ def _met_people(event: dict, member_id: str) -> list[tuple[str, bool, str | None
 
 def build_summary(event: dict, member_id: str) -> str:
     lang = _lang(member_id)
-    contacts = ctx.state.data["contacts"]
     people = [(o, mu, loc) for o, mu, loc in _met_people(event, member_id) if ctx.index.get(o)]
     lines = [SUMMARY["title"][lang].format(event=event["title"]), ""]
     if not people:
@@ -253,8 +290,9 @@ def build_summary(event: dict, member_id: str) -> str:
     for other, mutual, loc in people[:10]:
         name, role = _name_role(other)
         bits = [f"• {name}" + (f", {role}" if role else "")]
-        if mutual and contacts.get(other):
-            bits.append(SUMMARY["contact"][lang].format(c=contacts[other]))
+        contact = contact_of(other)[0] if mutual else None
+        if contact:
+            bits.append(SUMMARY["contact"][lang].format(c=contact))
         if loc:
             bits.append(SUMMARY["met_at"][lang].format(loc=loc))
         lines.append(" — ".join(bits))

@@ -1,3 +1,4 @@
+import { AddToCalendar } from "../components/AddToCalendar";
 import { useEffect, useState } from "react";
 import { api } from "../api";
 import { Button, Spinner } from "../components/ui";
@@ -83,6 +84,17 @@ export function EventsHubPage({ t, go }: Props) {
                   {[e.date, e.venue].some(Boolean) ? " · " : ""}
                   {t.attendees(e.attendee_count)}
                 </span>
+                {/^\d{4}-\d{2}-\d{2}$/.test(e.date ?? "") && (
+                  <AddToCalendar
+                    event={{
+                      title: e.title,
+                      start: new Date(`${e.date}T00:00:00`),
+                      allDay: true,
+                      location: e.venue || undefined,
+                      details: `${window.location.origin}/#/join/${e.code}`,
+                    }}
+                  />
+                )}
               </div>
               {mine.has(e.code) ? (
                 <a className="btn btn-primary btn-sm" href={href({ name: "event", code: e.code })}>

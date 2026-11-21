@@ -81,7 +81,7 @@ def test_full_admin_and_qr_flow(client):
 
     # 5. Want to meet: contact is hidden until both sides press it.
     first = client.post(f"/api/events/by-code/{code}/meet", headers=seeker_hdr, json={"target_id": h["member_id"]}).json()
-    assert first == {"mutual": False, "contact": None}
+    assert first == {"mutual": False, "contact": None, "contact_verified": False}
     second = client.post(f"/api/events/by-code/{code}/meet", headers=hirer_hdr, json={"target_id": s["member_id"]}).json()
     assert second["mutual"] is True and second["contact"] == "@seeker"
 

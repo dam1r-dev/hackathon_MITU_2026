@@ -2,13 +2,18 @@
 from __future__ import annotations
 
 import re
+import secrets
 import threading
 import time
 from collections import Counter
 from datetime import datetime, timezone
 
 import httpx
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
+from pydantic import BaseModel
+
+from .api_events import Auth, auth, need_member
+from .ctx import ctx
 
 router = APIRouter(prefix="/api")
 
@@ -84,3 +89,56 @@ def github_profile(username: str) -> dict:
     with _lock:
         _cache[key] = (now, out)
     return out
+
+
+# ------------------------------------------------------------------ ownership check
+CODE_TTL = 15 * 60
+
+
+class GithubStart(BaseModel):
+    login: str
+
+
+@router.post("/me/github/start")
+def github_start(req: GithubStart, a: Auth = Depends(auth)) -> dict:
+    """Issue a code the member puts in their GitHub bio. Pending for 15 minutes."""
+    member_id = need_member(a)
+    login = req.login.strip().lstrip("@")
+    if not USERNAME.match(login):
+        raise HTTPException(422, "bad_username")
+    code = "qit-" + secrets.token_hex(3)
+    st = ctx.state
+    with st.lock:
+        st.data["github_pending"][member_id] = {"login": login, "code": code, "created": time.time()}
+        st.save()
+    return {"code": code, "login": login}
+
+
+@router.post("/me/github/verify")
+def github_verify(a: Auth = Depends(auth)) -> dict:
+    member_id = need_member(a)
+    st = ctx.state
+    rec = st.data["github_pending"].get(member_id)
+    if not rec or time.time() - rec["created"] > CODE_TTL:
+        raise HTTPException(404, "no_pending_check")
+    user = _fetch(f"{API}/users/{rec['login']}")  # fresh, never from the prefill cache
+    bio = (user.get("bio") or "") if isinstance(user, dict) else ""
+    if rec["code"].lower() not in bio.lower():
+        raise HTTPException(409, "code_not_found")
+    login = (user.get("login") or rec["login"]) if isinstance(user, dict) else rec["login"]
+    with st.lock:
+        st.data["github"][member_id] = login
+        st.data["github_pending"].pop(member_id, None)
+        st.save()
+    return {"github": login}
+
+
+@router.delete("/me/github", status_code=204)
+def github_remove(a: Auth = Depends(auth)) -> Response:
+    member_id = need_member(a)
+    st = ctx.state
+    with st.lock:
+        st.data["github"].pop(member_id, None)
+        st.data["github_pending"].pop(member_id, None)
+        st.save()
+    return Response(status_code=204)

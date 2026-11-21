@@ -18,6 +18,7 @@ import segno
 from fastapi import APIRouter, Body, Depends, Header, HTTPException, Response
 
 from . import pin as pinlib
+from .identity import contact_of, verified_username, with_github
 from .ctx import ctx
 from .events_models import (
     Attendee,
@@ -156,6 +157,7 @@ def _fresh_presence(event_id: str, member_id: str) -> dict | None:
 
 def _with_locations(e: dict, matches: list[Match]) -> list[Match]:
     for m in matches:
+        m.profile = with_github(m.profile)
         rec = _fresh_presence(e["id"], m.profile.id)
         if rec:
             m.location, m.location_at = rec["location"], rec["at"]
@@ -187,7 +189,7 @@ def _drop_meetings(event_id: str, member_id: str) -> None:
 
 
 def _attendee(p: Profile) -> Attendee:
-    return Attendee(profile=p, system_role=ctx.state.role(p.id))
+    return Attendee(profile=with_github(p), system_role=ctx.state.role(p.id))
 
 
 # ------------------------------------------------------------------ admin sign-in
@@ -426,7 +428,8 @@ def want_to_meet(code: str, req: MeetRequest, a: Auth = Depends(auth)) -> MeetRe
         from . import telegram  # lazy: telegram imports this module
 
         telegram.notify_mutual(me_id, req.target_id)
-    return MeetResponse(mutual=mutual, contact=st.data["contacts"].get(req.target_id) if mutual else None)
+    contact, verified = contact_of(req.target_id) if mutual else (None, False)
+    return MeetResponse(mutual=mutual, contact=contact, contact_verified=verified)
 
 
 @router.get("/events/by-code/{code}/mutual", response_model=list[MutualOut])
@@ -439,7 +442,8 @@ def mutual_meets(code: str, a: Auth = Depends(auth)) -> list[MutualOut]:
     for target in meets.get(me_id, []):
         p = ctx.index.get(target)
         if p and me_id in meets.get(target, []):
-            out.append(MutualOut(profile=p, contact=st.data["contacts"].get(target)))
+            contact, verified = contact_of(target)
+            out.append(MutualOut(profile=with_github(p), contact=contact, contact_verified=verified))
     return out
 
 
@@ -455,7 +459,12 @@ def _me_out(me_id: str) -> MeOut:
         if rec:
             locs[ev.id] = LocationOut(location=rec["location"], at=rec["at"])
     return MeOut(
-        profile=p, system_role=st.role(me_id), contact=st.data["contacts"].get(me_id), events=events, locations=locs
+        profile=with_github(p),
+        system_role=st.role(me_id),
+        contact=st.data["contacts"].get(me_id),
+        contact_verified=verified_username(me_id) is not None,
+        events=events,
+        locations=locs,
     )
 
 
@@ -644,6 +653,9 @@ def delete_member(member_id: str, a: Auth = Depends(auth)) -> Response:
             st.data["deleted"].append(member_id)
         st.data["roles"].pop(member_id, None)
         st.data["contacts"].pop(member_id, None)
+        for key in ("tg_chats", "tg_users", "github", "github_pending"):
+            st.data[key].pop(member_id, None)
+        st.data["tg_links"] = {c: r for c, r in st.data["tg_links"].items() if r.get("member_id") != member_id}
         st.data["feedback"].pop(member_id, None)
         st.data["tokens"] = {t: m for t, m in st.data["tokens"].items() if m != member_id}
         for lst in st.data["attendees"].values():

@@ -122,10 +122,10 @@ The frontend uses hash routing, so the join page is the route `#/join/<code>` (f
 | Method and path | Purpose |
 |---|---|
 | `GET /api/events/by-code/{code}/matches?lang=ru` | Top 5 among this event's attendees. Call again to refresh as people arrive |
-| `POST /api/events/by-code/{code}/meet` `{ "target_id" }` | "Want to meet". Returns `{ "mutual": bool, "contact": "@handle" or null }`. Contact is shown only when both sides pressed it |
-| `GET /api/events/by-code/{code}/mutual` | Everyone with mutual interest, with contacts |
+| `POST /api/events/by-code/{code}/meet` `{ "target_id" }` | "Want to meet". Returns `{ "mutual": bool, "contact": "@handle" or null, "contact_verified": bool }`. Contact is shown only when both sides pressed it |
+| `GET /api/events/by-code/{code}/mutual` | Everyone with mutual interest, with `contact` and `contact_verified` |
 | `POST /api/events/by-code/{code}/location` `{ "location": str or null }` | "Where I am now". Must be an attendee (`403 not_in_event`) and the name must be in the event's `locations` (`422 unknown_location`); `null` clears. Returns `{ "location", "at" }` |
-| `GET /api/me` | `{ profile, system_role, contact, events, locations }`. `locations` maps event id to own fresh `{ "location", "at" }` (absent when unknown or older than 90 min) |
+| `GET /api/me` | `{ profile, system_role, contact, contact_verified, events, locations }`. `locations` maps event id to own fresh `{ "location", "at" }` (absent when unknown or older than 90 min) |
 | `PATCH /api/me` `{ "profile": ProfileIn, "contact": str or null }` | Edit own profile and contact (re-embedded, saved). Only members who joined at runtime (`403 profile_not_editable` for dataset profiles). `contact` omitted keeps it, empty string removes it. Returns the same shape as `GET /api/me` |
 | `POST /api/feedback` | Same as before, add `"event_code"` to stay inside the event |
 
@@ -135,6 +135,19 @@ Small events rarely have enough reciprocal goals (a room of students who all wan
 Default `locations` for new, seeded and older events: `["Актовый зал", "Буфет", "Сцена", "Балкон", "Вход"]`. Presence is stored in state as `presence[event_id][member_id] = { "location", "at" }`.
 
 `contact` is never part of `Profile` and never appears in matches, lists or the map.
+
+### Verified identity
+Contact: when a member's Telegram is linked and the account has a username, the contact shown to mutual matches (meet, `/mutual`, bot messages, summaries) is `"@<telegram username>"` with `contact_verified: true`; otherwise the typed contact with `contact_verified: false`. `contact_verified` sits next to every `contact` field (default false).
+
+| Route | Notes |
+|---|---|
+| `GET /api/tg/link` (member) | `{ enabled, linked, username, url }`. Every call issues a fresh one-time code (15 min) and drops the member's earlier unused codes. The bot consumes the code on `/start <code>`; unknown, used or expired codes get the "open the bot from the event page" reply. Stored: `tg_users[member] = { chat_id, username or null, first_name }`. One Telegram account belongs to one member, the newest link wins |
+| `DELETE /api/tg/link` (member) | Unlink: removes chat and username. `204` |
+| `POST /api/me/github/start` `{ "login" }` (member) | `{ "code": "qit-xxxxxx", "login" }`, pending 15 min. `422 bad_username` |
+| `POST /api/me/github/verify` (member) | Fetches the GitHub bio (bypassing the prefill cache); stores the login as verified when the code is in it. `{ "github": login }`. `409 code_not_found`, `404 no_pending_check` (none or expired), plus the GitHub errors above |
+| `DELETE /api/me/github` (member) | Removes the verified login. `204` |
+
+`Profile` gets optional `github: string | null`: only a verified login, filled in event matches, attendees, `/mutual` and `/me`. The unverified prefill never appears.
 
 ### Admin and organizer
 Organizer rights apply only to events where the member is listed in `organizer_ids`.

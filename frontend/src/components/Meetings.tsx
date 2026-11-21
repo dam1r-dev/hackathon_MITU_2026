@@ -1,3 +1,4 @@
+import { AddToCalendar } from "./AddToCalendar";
 import { useEffect, useState } from "react";
 import type { Dict } from "../i18n";
 import type { InMinutes, Meeting, Profile } from "../types";
@@ -169,6 +170,15 @@ export function MeetingsStrip({
                 {t.meetWeMet} ✓
               </Button>
             </>,
+            <AddToCalendar
+              event={{
+                title: `🤝 ${m.other.name} (${m.other.role})`,
+                start: new Date(m.at),
+                minutes: 15,
+                location: m.location,
+                details: window.location.href,
+              }}
+            />,
           ),
         )}
         {waiting.map((m) => row(m, <span className="muted small">⏳ {t.meetWaitingReply}</span>))}

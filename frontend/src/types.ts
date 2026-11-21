@@ -33,6 +33,8 @@ export interface ProfileIn {
 
 export interface Profile extends ProfileIn {
   id: string;
+  /** GitHub login confirmed through the bio check. Absent or null when not confirmed. */
+  github?: string | null;
 }
 
 export interface Match {
@@ -98,11 +100,14 @@ export interface JoinResponse {
 export interface MeetResponse {
   mutual: boolean;
   contact: string | null;
+  /** true: the contact is the @username of their linked Telegram account */
+  contact_verified: boolean;
 }
 
 export interface MutualOut {
   profile: Profile;
   contact: string | null;
+  contact_verified: boolean;
 }
 
 export interface LocationState {
@@ -114,6 +119,8 @@ export interface MeOut {
   profile: Profile;
   system_role: SystemRole;
   contact: string | null;
+  /** true: others see your linked Telegram @username instead of the typed contact */
+  contact_verified: boolean;
   events: EventInfo[];
   /** event id -> my current location (fresh only) */
   locations: Record<string, LocationState>;

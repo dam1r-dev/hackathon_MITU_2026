@@ -10,7 +10,7 @@ type Props = {
   busy: boolean;
   onFeedback: (verdict: "met" | "not_fit") => void;
   /** Event mode: "Want to meet" with mutual reveal of the contact. */
-  meet?: { state: "idle" | "waiting" | "mutual"; contact?: string | null; onClick: () => void };
+  meet?: { state: "idle" | "waiting" | "mutual"; contact?: string | null; verified?: boolean; onClick: () => void };
   /** Event mode: turn the match into a real meeting. `open` is set while a proposed/accepted meeting exists. */
   meetNow?: { open: boolean; onClick: () => void };
   isNew?: boolean;
@@ -18,6 +18,23 @@ type Props = {
 
 /** Whole minutes since an ISO time (never negative). */
 export const minutesAgo = (iso: string) => Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 60000));
+
+/** A contact shown after a mutual match: "✓" when it is the linked Telegram account, a muted note otherwise. */
+export function ContactValue({ t, contact, verified }: { t: Dict; contact?: string | null; verified?: boolean }) {
+  if (!contact) return <span className="muted small">{t.noContact}</span>;
+  return (
+    <span className="contact-wrap">
+      <strong className="mono contact">{contact}</strong>
+      {verified ? (
+        <span className="verified" title={t.contactVerified} aria-label={t.contactVerified}>
+          ✓
+        </span>
+      ) : (
+        <span className="unverified">{t.contactUnverified}</span>
+      )}
+    </span>
+  );
+}
 
 export function MatchCard({ t, m, rank, busy, onFeedback, meet, meetNow, isNew }: Props) {
   const [copied, setCopied] = useState(false);
@@ -49,6 +66,11 @@ export function MatchCard({ t, m, rank, busy, onFeedback, meet, meetNow, isNew }
             </div>
           )}
           <GoalBadge goal={p.goal}>{t.goals[p.goal]}</GoalBadge>
+          {p.github && (
+            <a className="gh-badge" href={`https://github.com/${encodeURIComponent(p.github)}`} target="_blank" rel="noreferrer" title={t.ghBadgeTitle}>
+              ✓ GitHub @{p.github}
+            </a>
+          )}
           {m.kind === "similar" && <span className="similar-badge">{t.similarBadge}</span>}
           {m.location && (
             <div className="where">
@@ -109,7 +131,7 @@ export function MatchCard({ t, m, rank, busy, onFeedback, meet, meetNow, isNew }
           {meet.state === "mutual" && (
             <p className="meet-note">
               🎉 {t.meetMutual}{" "}
-              {meet.contact ? <strong className="mono">{meet.contact}</strong> : <span className="muted">{t.noContact}</span>}
+              <ContactValue t={t} contact={meet.contact} verified={meet.verified} />
             </p>
           )}
         </div>

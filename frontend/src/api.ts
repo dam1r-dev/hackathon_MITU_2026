@@ -79,6 +79,10 @@ export const api = {
 
   github: (username: string) => get<GithubProfile>(`/api/github/${encodeURIComponent(username)}`),
 
+  githubStart: (login: string) => post<{ code: string; login: string }>("/api/me/github/start", { login }),
+  githubVerify: () => post<{ github: string }>("/api/me/github/verify", {}),
+  githubRemove: () => send<void>("DELETE", "/api/me/github"),
+
   profiles: () => get<Profile[]>("/api/profiles"),
 
   graph: (viewer?: string) => get<GraphResponse>(`/api/graph${viewer ? `?viewer=${encodeURIComponent(viewer)}` : ""}`),

@@ -1,0 +1,20 @@
+.cal { display: inline-flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.cal-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.4;
+  color: inherit;
+  background: transparent;
+  border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease;
+}
+.cal-btn:hover { background: color-mix(in srgb, currentColor 8%, transparent); }
+.cal-ics { opacity: 0.75; }

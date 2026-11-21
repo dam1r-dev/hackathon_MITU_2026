@@ -107,17 +107,20 @@ class MeetRequest(BaseModel):
 class MeetResponse(BaseModel):
     mutual: bool
     contact: str | None = None  # only when mutual and the other person left one
+    contact_verified: bool = False  # true: "@username" of their linked Telegram account
 
 
 class MutualOut(BaseModel):
     profile: Profile
     contact: str | None = None
+    contact_verified: bool = False
 
 
 class MeOut(BaseModel):
     profile: Profile
     system_role: SystemRole
     contact: str | None = None
+    contact_verified: bool = False  # true: others see your linked Telegram @username instead
     events: list[Event]
     # event id -> own current location (only fresh ones, under 90 minutes old)
     locations: dict[str, "LocationOut"] = Field(default_factory=dict)

@@ -27,6 +27,21 @@ export type Dict = {
   meetWaiting: string;
   meetMutual: string;
   noContact: string;
+  contactVerified: string;
+  contactUnverified: string;
+  ghTitle: string;
+  ghIntro: string;
+  ghLoginLabel: string;
+  ghGetCode: string;
+  ghStep1: string;
+  ghCheck: string;
+  ghChecking: string;
+  ghConfirmed: (login: string) => string;
+  ghCodeMissing: string;
+  ghNoPending: string;
+  ghFailed: string;
+  ghRemove: string;
+  ghBadgeTitle: string;
   mutualTitle: string;
   notInEvent: string;
   // projector
@@ -278,6 +293,21 @@ const en: Dict = {
   meetWaiting: "Sent. If they press it too, you will both see contacts.",
   meetMutual: "It's mutual! Contact:",
   noContact: "no contact left, find them in the room",
+  contactVerified: "confirmed via Telegram",
+  contactUnverified: "not confirmed",
+  ghTitle: "Confirm this is your GitHub",
+  ghIntro: "Others will see a ✓ next to your GitHub only after you prove it is yours.",
+  ghLoginLabel: "GitHub username",
+  ghGetCode: "Get a code",
+  ghStep1: "Add this code to your GitHub bio (github.com/settings/profile), then press Check. You can remove it afterwards.",
+  ghCheck: "Check",
+  ghChecking: "Checking…",
+  ghConfirmed: (login) => `✓ GitHub @${login} confirmed`,
+  ghCodeMissing: "The code is not in your bio yet. Save your GitHub profile and try again.",
+  ghNoPending: "The code expired. Get a new one.",
+  ghFailed: "Could not reach GitHub. Try again in a minute.",
+  ghRemove: "Remove",
+  ghBadgeTitle: "GitHub confirmed",
   mutualTitle: "Mutual: go say hi",
   notInEvent: "You are not in this event yet.",
   screenScan: "Scan to join",
@@ -539,6 +569,21 @@ const ru: Dict = {
   meetWaiting: "Отправлено. Если человек тоже нажмёт, вы оба увидите контакты.",
   meetMutual: "Взаимно! Контакт:",
   noContact: "контакт не оставлен, найдите человека в зале",
+  contactVerified: "подтверждено через Telegram",
+  contactUnverified: "не подтверждено",
+  ghTitle: "Подтвердите свой GitHub",
+  ghIntro: "Другие увидят ✓ рядом с вашим GitHub только после подтверждения, что он ваш.",
+  ghLoginLabel: "Имя пользователя GitHub",
+  ghGetCode: "Получить код",
+  ghStep1: "Добавьте этот код в bio на GitHub (github.com/settings/profile) и нажмите «Проверить». Потом его можно удалить.",
+  ghCheck: "Проверить",
+  ghChecking: "Проверяем…",
+  ghConfirmed: (login) => `✓ GitHub @${login} подтверждён`,
+  ghCodeMissing: "Кода пока нет в вашем bio. Сохраните профиль на GitHub и попробуйте снова.",
+  ghNoPending: "Код устарел. Получите новый.",
+  ghFailed: "GitHub не отвечает. Попробуйте через минуту.",
+  ghRemove: "Убрать",
+  ghBadgeTitle: "GitHub подтверждён",
   mutualTitle: "Взаимно: подойдите поздороваться",
   notInEvent: "Вы ещё не участник этого мероприятия.",
   screenScan: "Отсканируйте, чтобы присоединиться",
@@ -805,6 +850,21 @@ const kk: Dict = {
   meetWaiting: "Жіберілді. Ол да басса, екеуіңіз де байланысты көресіздер.",
   meetMutual: "Өзара! Байланыс:",
   noContact: "байланыс қалдырылмаған, оны залдан табыңыз",
+  contactVerified: "Telegram арқылы расталған",
+  contactUnverified: "расталмаған",
+  ghTitle: "GitHub-ты растаңыз",
+  ghIntro: "Басқалар GitHub-тың жанында ✓ белгісін тек оның өзіңізге тиесілі екенін дәлелдегеннен кейін көреді.",
+  ghLoginLabel: "GitHub пайдаланушы аты",
+  ghGetCode: "Код алу",
+  ghStep1: "Бұл кодты GitHub bio-ға қосыңыз (github.com/settings/profile) да «Тексеру» түймесін басыңыз. Кейін оны өшіруге болады.",
+  ghCheck: "Тексеру",
+  ghChecking: "Тексерілуде…",
+  ghConfirmed: (login) => `✓ GitHub @${login} расталды`,
+  ghCodeMissing: "Код bio-да әлі жоқ. GitHub профилін сақтап, қайта көріңіз.",
+  ghNoPending: "Кодтың мерзімі өтті. Жаңасын алыңыз.",
+  ghFailed: "GitHub-қа қосылу мүмкін болмады. Бір минуттан кейін қайталаңыз.",
+  ghRemove: "Алып тастау",
+  ghBadgeTitle: "GitHub расталды",
   mutualTitle: "Өзара: барып амандасыңыз",
   notInEvent: "Сіз әлі бұл іс-шараның қатысушысы емессіз.",
   screenScan: "Қосылу үшін сканерлеңіз",

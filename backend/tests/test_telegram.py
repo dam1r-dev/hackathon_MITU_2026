@@ -7,7 +7,7 @@ P = {"role": "Dev", "stack": ["Python"], "experience_years": 2, "interests": ["A
 def test_link_hidden_when_bot_off(client):
     code = client.post("/api/events", headers=_admin(client), json={"title": "TG off"}).json()["code"]
     tok = _join(client, code, "Off", "find_job")[1]
-    assert client.get("/api/tg/link", headers=tok).json() == {"enabled": False, "linked": False, "url": None}
+    assert client.get("/api/tg/link", headers=tok).json() == {"enabled": False, "linked": False, "username": None, "url": None}
 
 
 def _admin(client):

@@ -570,3 +570,14 @@ select:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-co
 .gh-ok img { border-radius: 50%; flex: none; }
 .report-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--sp-3); min-width: 0; }
 .tg-send { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); }
+
+/* identity: verified contact and GitHub */
+.contact-wrap { display: inline-flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+.verified { color: var(--success); font-weight: var(--fw-semibold); cursor: help; }
+.unverified { font-size: var(--fs-xs); color: var(--text-faint); }
+.gh-badge { display: inline-block; margin-top: var(--sp-1); font-size: var(--fs-xs); color: var(--success); font-weight: var(--fw-semibold); text-decoration: none; }
+.gh-badge:hover { text-decoration: underline; }
+.gh-verify { display: grid; gap: var(--sp-3); }
+.gh-verify .row { display: flex; gap: var(--sp-2); flex-wrap: wrap; align-items: center; }
+.gh-verify .row input { flex: 1 1 160px; min-width: 0; }
+.gh-code { font-size: var(--fs-lg, 1.1rem); letter-spacing: 0.04em; padding: var(--sp-2) var(--sp-3); border-radius: var(--radius-sm); background: var(--surface-2); user-select: all; }

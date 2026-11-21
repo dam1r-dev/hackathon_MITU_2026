@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ApiError } from "../api";
-import { MatchCard } from "../components/MatchCard";
+import { ContactValue, MatchCard } from "../components/MatchCard";
 import { MeetingsStrip, MeetSheet, Toast } from "../components/Meetings";
 import { TelegramConnect } from "../components/TelegramConnect";
 import { GoalBars, RoomMap } from "../components/RoomMap";
@@ -367,7 +367,7 @@ export function EventPage({ t, lang, code, go }: Props) {
                   <strong>{m.profile.name}</strong>
                   <span className="muted">{m.profile.role}</span>
                 </div>
-                {m.contact ? <span className="mono contact">{m.contact}</span> : <span className="muted small">{t.noContact}</span>}
+                <ContactValue t={t} contact={m.contact} verified={m.contact_verified} />
               </li>
             ))}
           </ul>
@@ -409,6 +409,7 @@ export function EventPage({ t, lang, code, go }: Props) {
                 meet={{
                   state: mu ? "mutual" : sent.includes(m.profile.id) ? "waiting" : "idle",
                   contact: mu?.contact,
+                  verified: mu?.contact_verified,
                   onClick: () => wantMeet(m.profile.id),
                 }}
               />

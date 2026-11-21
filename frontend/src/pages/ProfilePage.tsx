@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, ApiError } from "../api";
+import { GithubVerify } from "../components/GithubVerify";
 import { ProfileForm } from "../components/ProfileForm";
 import { Avatar, Button, Chip, GoalBadge, Segmented, Spinner } from "../components/ui";
 import { LANGS, type Dict } from "../i18n";
@@ -173,6 +174,8 @@ export function ProfilePage({ t, lang, setLang, theme, setTheme, go }: Props) {
             </div>
           </div>
         )}
+
+        <GithubVerify t={t} verified={p.github} onChange={(github) => setMe((cur) => (cur ? { ...cur, profile: { ...cur.profile, github } } : cur))} />
 
         <div className="edit-actions">
           <Button type="button" variant="ghost" size="sm" onClick={startEdit}>

@@ -29,6 +29,11 @@ def _empty() -> dict:
         "presence": {},  # event_id -> {member_id: {"location": str, "at": iso}}
         "meetings": {},  # event_id -> {meeting_id: {id, from_id, to_id, location, at, status, created}}
         "joined_at": {},  # event_id -> {member_id: iso}, missing for attendees from before this was recorded
+        "tg_links": {},  # one-time link code -> {"member_id", "created" (epoch seconds)}
+        "tg_chats": {},  # member_id -> Telegram chat id
+        "tg_users": {},  # member_id -> {"chat_id", "username" or None, "first_name"}
+        "github": {},  # member_id -> GitHub login confirmed through the bio check
+        "github_pending": {},  # member_id -> {"login", "code", "created" (epoch seconds)}
         "feedback": {},  # viewer_id -> {"met": [...], "not_fit": [...]}
     }
 

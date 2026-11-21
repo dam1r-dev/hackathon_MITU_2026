@@ -39,6 +39,8 @@ class ProfileIn(BaseModel):
 
 class Profile(ProfileIn):
     id: str
+    # Only a GitHub login confirmed through the bio check. Filled on output, never stored in the index.
+    github: str | None = None
 
 
 class Match(BaseModel):

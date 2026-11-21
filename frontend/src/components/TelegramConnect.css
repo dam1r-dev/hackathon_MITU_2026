@@ -26,3 +26,6 @@
   font-size: 18px;
 }
 .tg-linked { font-weight: 600; color: #2aabee; padding: 8px 14px; }
+.tg-linked { justify-content: space-between; flex-wrap: wrap; }
+.tg-linked small { font-weight: 400; color: var(--text-dim); }
+.tg-off { background: none; border: 0; padding: 4px 0; color: var(--text-dim); font: inherit; font-size: 13px; text-decoration: underline; cursor: pointer; }

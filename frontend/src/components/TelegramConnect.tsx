@@ -3,12 +3,12 @@ import { useEffect, useState } from "react";
 import { session } from "../session";
 import type { Lang } from "../types";
 
-type Link = { enabled: boolean; linked: boolean; url: string | null };
+type Link = { enabled: boolean; linked: boolean; username: string | null; url: string | null };
 
-const TEXT: Record<Lang, { connect: string; linked: string; hint: string }> = {
-  ru: { connect: "Уведомления в Telegram", linked: "Telegram подключён", hint: "Напишем, когда интерес взаимный или вас зовут на встречу" },
-  kk: { connect: "Telegram хабарламалары", linked: "Telegram қосылды", hint: "Өзара қызығушылық немесе кездесуге шақыру болғанда жазамыз" },
-  en: { connect: "Telegram notifications", linked: "Telegram connected", hint: "We'll ping you on a mutual match or a meeting invite" },
+const TEXT: Record<Lang, { connect: string; linked: string; hint: string; off: string; noName: string }> = {
+  ru: { connect: "Уведомления в Telegram", linked: "Telegram подключён", hint: "Напишем, когда интерес взаимный или вас зовут на встречу", off: "Отключить", noName: "Задайте username в настройках Telegram, чтобы контакт подтверждался" },
+  kk: { connect: "Telegram хабарламалары", linked: "Telegram қосылды", hint: "Өзара қызығушылық немесе кездесуге шақыру болғанда жазамыз", off: "Ажырату", noName: "Байланыс расталуы үшін Telegram баптауында username көрсетіңіз" },
+  en: { connect: "Telegram notifications", linked: "Telegram connected", hint: "We'll ping you on a mutual match or a meeting invite", off: "Disconnect", noName: "Set a username in Telegram so your contact can be confirmed" },
 };
 
 async function fetchLink(): Promise<Link | null> {
@@ -41,11 +41,25 @@ export function TelegramConnect({ lang }: { lang: Lang }) {
     return () => window.clearInterval(id);
   }, [waiting]);
 
+  async function disconnect() {
+    const token = session.get()?.token;
+    if (!token) return;
+    await fetch("/api/tg/link", { method: "DELETE", headers: { "X-Member-Token": token } }).catch(() => null);
+    setLink(await fetchLink().catch(() => null));
+  }
+
   if (!link?.enabled) return null;
   if (link.linked)
     return (
       <div className="tg-connect tg-linked">
-        <span aria-hidden>✓</span> {t.linked}
+        <span>
+          <span aria-hidden>✓</span> {t.linked}
+          {link.username ? ` · @${link.username}` : ""}
+          {!link.username && <small>{t.noName}</small>}
+        </span>
+        <button type="button" className="tg-off" onClick={disconnect}>
+          {t.off}
+        </button>
       </div>
     );
   return (
