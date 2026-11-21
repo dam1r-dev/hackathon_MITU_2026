@@ -5,6 +5,6 @@
   "outputDirectory": "dist",
   "rewrites": [
     { "source": "/pin", "destination": "/index.html" },
-    { "source": "/api/:path*", "destination": "https://planet-endorsed-intensive-comparative.trycloudflare.com/api/:path*" }
+    { "source": "/api/:path*", "destination": "https://observations-arabia-decisions-later.trycloudflare.com/api/:path*" }
   ]
 }
