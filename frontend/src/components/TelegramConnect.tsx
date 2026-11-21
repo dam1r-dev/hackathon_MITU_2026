@@ -6,9 +6,9 @@ import type { Lang } from "../types";
 type Link = { enabled: boolean; linked: boolean; username: string | null; url: string | null };
 
 const TEXT: Record<Lang, { connect: string; linked: string; hint: string; off: string; noName: string }> = {
-  ru: { connect: "Уведомления в Telegram", linked: "Telegram подключён", hint: "Напишем, когда интерес взаимный или вас зовут на встречу", off: "Отключить", noName: "Задайте username в настройках Telegram, чтобы контакт подтверждался" },
-  kk: { connect: "Telegram хабарламалары", linked: "Telegram қосылды", hint: "Өзара қызығушылық немесе кездесуге шақыру болғанда жазамыз", off: "Ажырату", noName: "Байланыс расталуы үшін Telegram баптауында username көрсетіңіз" },
-  en: { connect: "Telegram notifications", linked: "Telegram connected", hint: "We'll ping you on a mutual match or a meeting invite", off: "Disconnect", noName: "Set a username in Telegram so your contact can be confirmed" },
+  ru: { connect: "Подтвердите свой Telegram", linked: "Telegram подтверждён", hint: "Откройте бота и нажмите Start. Так мы проверим, что аккаунт ваш, и напишем о взаимном интересе", off: "Отключить", noName: "Задайте username в настройках Telegram, чтобы контакт подтверждался" },
+  kk: { connect: "Telegram-ды растаңыз", linked: "Telegram расталды", hint: "Ботты ашып, Start басыңыз. Аккаунт сіздікі екенін тексеріп, өзара қызығушылық туралы жазамыз", off: "Ажырату", noName: "Байланыс расталуы үшін Telegram баптауында username көрсетіңіз" },
+  en: { connect: "Confirm your Telegram", linked: "Telegram confirmed", hint: "Open the bot and press Start. This proves the account is yours, and we'll ping you on a mutual match", off: "Disconnect", noName: "Set a username in Telegram so your contact can be confirmed" },
 };
 
 async function fetchLink(): Promise<Link | null> {

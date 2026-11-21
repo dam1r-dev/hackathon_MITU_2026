@@ -129,7 +129,7 @@ export function EventJoinPage({ t, lang, code, go }: Props) {
           }}
           loading={busy}
           submitLabel={busy ? t.joining : t.joinCta}
-        >
+          top={
           <div className="field">
             <label className="field-label" htmlFor="f-contact">
               {t.contact}
@@ -153,7 +153,8 @@ export function EventJoinPage({ t, lang, code, go }: Props) {
               <span className="field-hint">{t.contactHint}</span>
             )}
           </div>
-        </ProfileForm>
+          }
+        />
       )}
 
       {error && (

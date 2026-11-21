@@ -39,6 +39,8 @@ type Props = {
   loading: boolean;
   /** Extra fields shown before the submit button (e.g. contact on event join). */
   children?: ReactNode;
+  /** Fields shown first, above the GitHub prefill (the join page puts Telegram here). */
+  top?: ReactNode;
   submitLabel?: string;
   /** Editing an existing profile: no "fill with an example" link. */
   hideExample?: boolean;
@@ -122,7 +124,7 @@ function GithubFill({ t, value, onChange }: { t: Dict; value: ProfileIn; onChang
   );
 }
 
-export function ProfileForm({ t, value, onChange, onSubmit, loading, children, submitLabel, hideExample }: Props) {
+export function ProfileForm({ t, value, onChange, onSubmit, loading, children, top, submitLabel, hideExample }: Props) {
   const [touched, setTouched] = useState(false);
   const set = <K extends keyof ProfileIn>(k: K, v: ProfileIn[K]) => onChange({ ...value, [k]: v });
   const hire = value.goal === "hire";
@@ -147,6 +149,8 @@ export function ProfileForm({ t, value, onChange, onSubmit, loading, children, s
           ✦ {t.example}
         </Button>
       )}
+
+      {top}
 
       {!hire && <GithubFill t={t} value={value} onChange={onChange} />}
 
