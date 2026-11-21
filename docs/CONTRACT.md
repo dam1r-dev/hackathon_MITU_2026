@@ -123,6 +123,8 @@ The frontend uses hash routing, so the join page is the route `#/join/<code>` (f
 | `POST /api/feedback` | Same as before, add `"event_code"` to stay inside the event |
 
 Event matches and join responses add optional `location` and `location_at` to each match (the matched person's venue location, only when fresh, under 90 minutes; otherwise `null`). `/api/recommend` and `/api/feedback` omit these fields.
+
+Small events rarely have enough reciprocal goals (a room of students who all want a job). Inside an event, when fewer than 5 people pass the goal check, the list is filled with the most similar attendees regardless of goal: `score = similarity * 0.5` (always below real matches) and `kind: "similar"`; real matches have `kind: null`.
 Default `locations` for new, seeded and older events: `["Актовый зал", "Буфет", "Сцена", "Балкон", "Вход"]`. Presence is stored in state as `presence[event_id][member_id] = { "location", "at" }`.
 
 `contact` is never part of `Profile` and never appears in matches, lists or the map.

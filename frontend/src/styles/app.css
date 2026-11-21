@@ -535,3 +535,14 @@ select:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-co
 .loc-editor { display: grid; gap: var(--sp-3); }
 .screen-venue { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-4); margin: var(--sp-3) 0 0; padding: 0; list-style: none; font-size: var(--fs-sm); }
 .screen-venue strong { margin-left: 4px; }
+
+/* Fallback match (goals differ, profiles close) */
+.similar-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px dashed currentColor;
+  opacity: 0.75;
+}

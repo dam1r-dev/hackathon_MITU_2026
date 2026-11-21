@@ -21,6 +21,7 @@ export type Dict = {
   eventResults: string;
   liveUpdates: string;
   newBadge: string;
+  similarBadge: string;
   fewYet: string;
   wantMeet: string;
   meetWaiting: string;
@@ -191,6 +192,7 @@ const en: Dict = {
   eventResults: "Your 5 people here",
   liveUpdates: "Updates as people arrive",
   newBadge: "New",
+  similarBadge: "Similar interests",
   fewYet: "Only a few people have joined so far. Your list will grow as others arrive.",
   wantMeet: "Want to meet",
   meetWaiting: "Sent. If they press it too, you will both see contacts.",
@@ -369,6 +371,7 @@ const ru: Dict = {
   eventResults: "Ваши 5 человек здесь",
   liveUpdates: "Обновляется, когда приходят люди",
   newBadge: "Новый",
+  similarBadge: "Похожие интересы",
   fewYet: "Пока присоединились немногие. Список пополнится, когда придут другие.",
   wantMeet: "Хочу познакомиться",
   meetWaiting: "Отправлено. Если человек тоже нажмёт, вы оба увидите контакты.",
@@ -552,6 +555,7 @@ const kk: Dict = {
   eventResults: "Осындағы сіздің 5 адамыңыз",
   liveUpdates: "Адамдар келген сайын жаңарады",
   newBadge: "Жаңа",
+  similarBadge: "Ұқсас қызығушылықтар",
   fewYet: "Әзірге аз адам қосылды. Басқалар келгенде тізім толығады.",
   wantMeet: "Танысқым келеді",
   meetWaiting: "Жіберілді. Ол да басса, екеуіңіз де байланысты көресіздер.",

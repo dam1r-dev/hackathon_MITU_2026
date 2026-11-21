@@ -65,6 +65,12 @@ FRAME = {
     "ru": "Вы хотите {my}, а {name} хочет {their}.",
     "kk": "Сіздің мақсатыңыз: {my}; {name} мақсаты: {their}.",
 }
+# Fallback match: goals are not reciprocal, the profiles are simply close.
+SIMILAR = {
+    "en": "Different goals (you: {my}; {name}: {their}), but you have a lot in common.",
+    "ru": "Цели разные (вы: {my}; {name}: {their}), но у вас много общего.",
+    "kk": "Мақсаттарыңыз әртүрлі (сіз: {my}; {name}: {their}), бірақ ортақ тұстарыңыз көп.",
+}
 SHARED = {
     "en": " Shared topics: {tags}.",
     "ru": " Общее: {tags}.",

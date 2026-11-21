@@ -50,6 +50,8 @@ class Match(BaseModel):
     # Event matches only: where this person says they are now (fresh, under 90 minutes old).
     location: str | None = None
     location_at: str | None = None
+    # "similar" when goals do not match but the profiles are close (fallback in small events).
+    kind: str | None = None
 
 
 class RecommendRequest(BaseModel):

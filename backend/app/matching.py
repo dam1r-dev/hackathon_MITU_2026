@@ -79,10 +79,18 @@ def fit(x: Subject, y: Subject) -> float:
     """
     if RECIPROCAL[x.goal] != y.goal:
         return 0.0
+    return (0.05 + 0.95 * similarity(x, y)) * _goal_factor(x, y)
+
+
+def similarity(x: Subject, y: Subject) -> float:
+    """Symmetric profile similarity, 0..1: embeddings, shared stack, shared interests. Ignores goals."""
     cos = float(np.dot(x.vec, y.vec))
     sim = min(1.0, max(0.0, (cos - 0.1) / 0.6))
-    base = 0.55 * sim + 0.3 * _overlap(x.stack, y.stack) + 0.15 * _overlap(x.tags - x.stack, y.tags - y.stack)
-    return (0.05 + 0.95 * base) * _goal_factor(x, y)
+    return 0.55 * sim + 0.3 * _overlap(x.stack, y.stack) + 0.15 * _overlap(x.tags - x.stack, y.tags - y.stack)
+
+
+# Fallback picks (no goal match) are scaled down so they always rank below real two-sided matches.
+SIMILAR_WEIGHT = 0.5
 
 
 def score(x: Subject, y: Subject) -> float:
@@ -225,23 +233,41 @@ class Index:
         vs = _subject(viewer, vvec)
 
         scored: list[tuple[float, int]] = []
+        similar: list[tuple[float, int]] = []
         for i, p in enumerate(self.profiles):
             if viewer_id and p.id == viewer_id:
                 continue
             if allowed_ids is not None and p.id not in allowed_ids:
                 continue
-            s = score(vs, _subject(p, self.mat[i]))
-            s *= self._feedback_factor(viewer_id, i)
+            other = _subject(p, self.mat[i])
+            fb = self._feedback_factor(viewer_id, i)
+            s = score(vs, other) * fb
             if s > 0:
                 scored.append((s, i))
+            elif allowed_ids is not None and fb > 0:
+                # Small live rooms rarely have enough reciprocal goals (everyone looks for a job):
+                # keep the most similar people as a fallback so nobody gets an empty list.
+                similar.append((similarity(vs, other) * SIMILAR_WEIGHT * fb, i))
         scored.sort(key=lambda x: x[0], reverse=True)
+        picks = [(s, i, False) for s, i in scored[:TOP_N]]
+        if len(picks) < TOP_N:
+            similar.sort(key=lambda x: x[0], reverse=True)
+            picks += [(s, i, True) for s, i in similar[: TOP_N - len(picks)]]
 
         matches: list[Match] = []
-        for s, i in scored[:TOP_N]:
+        mine = {t.lower(): t for t in (*viewer.stack, *viewer.interests)}
+        for s, i, is_similar in picks:
             p = self.profiles[i]
-            mine = {t.lower(): t for t in (*viewer.stack, *viewer.interests)}
             shared = [mine[t] for t in mine if t in {x.lower() for x in (*p.stack, *p.interests)}]
+            text = self._texts(viewer, p, lang, viewer_id, shared)
+            if is_similar:
+                g = texts.GOAL[lang]
+                text["explanation"] = texts.SIMILAR[lang].format(my=g[viewer.goal], name=p.name, their=g[p.goal]) + (
+                    texts.SHARED[lang].format(tags=", ".join(shared)) if shared else ""
+                )
             matches.append(
-                Match(profile=p, score=round(s, 3), shared_tags=shared, **self._texts(viewer, p, lang, viewer_id, shared))
+                Match(
+                    profile=p, score=round(s, 3), shared_tags=shared, kind="similar" if is_similar else None, **text
+                )
             )
         return int((time.perf_counter() - start) * 1000), matches

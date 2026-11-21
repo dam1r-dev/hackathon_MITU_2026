@@ -44,6 +44,8 @@ export interface Match {
   /** Event matches only: current venue location, when fresh (< 90 min). */
   location?: string | null;
   location_at?: string | null;
+  /** "similar": goals don't match, the profiles are close (fallback in small events). */
+  kind?: "similar" | null;
 }
 
 export interface RecommendResponse {

@@ -42,6 +42,7 @@ export function MatchCard({ t, m, rank, busy, onFeedback, meet, isNew }: Props) 
             {p.role} · {t.years(p.experience_years)}
           </div>
           <GoalBadge goal={p.goal}>{t.goals[p.goal]}</GoalBadge>
+          {m.kind === "similar" && <span className="similar-badge">{t.similarBadge}</span>}
           {m.location && (
             <div className="where">
               📍 {m.location}
