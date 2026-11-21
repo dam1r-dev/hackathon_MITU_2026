@@ -76,7 +76,7 @@ def auth(
     st = ctx.state
     member_id = st.member_for_token(x_member_token)
     role = st.role(member_id) if member_id else "member"
-    admin = bool(x_admin_token and x_admin_token in st.admin_tokens) or role == "admin"
+    admin = bool(x_admin_token and x_admin_token in st.data["admin_tokens"]) or role == "admin"
     return Auth(admin, member_id, role, x_member_token)
 
 
@@ -197,7 +197,9 @@ def admin_login(req: LoginRequest) -> LoginResponse:
     if not secrets.compare_digest(req.code.encode(), expected.encode()):
         raise HTTPException(401, "wrong_code")
     token = secrets.token_urlsafe(24)
-    ctx.state.admin_tokens.add(token)
+    with ctx.state.lock:
+        ctx.state.data["admin_tokens"].append(token)
+        ctx.state.save()
     return LoginResponse(token=token)
 
 

@@ -39,6 +39,7 @@ export type Dict = {
   pinLinkCta: string;
   screenLaptop: string;
   pinNewIn: string;
+  pinNeedsAdmin: string;
   screenEmpty: string;
   inRoom: string;
   // profile
@@ -263,6 +264,7 @@ const en: Dict = {
   pinLinkCta: "Enter code",
   screenLaptop: "From a laptop:",
   pinNewIn: "new code in",
+  pinNeedsAdmin: "Sign in to the admin panel in this browser to show the laptop code",
   screenEmpty: "Nobody yet. Be the first to scan!",
   inRoom: "in the room",
   meTitle: "My profile",
@@ -494,6 +496,7 @@ const ru: Dict = {
   pinLinkCta: "Ввести код",
   screenLaptop: "С ноутбука:",
   pinNewIn: "новый код через",
+  pinNeedsAdmin: "Войдите в админку в этом браузере, чтобы показать код для ноутбуков",
   screenEmpty: "Пока никого. Отсканируйте первым!",
   inRoom: "в зале",
   meTitle: "Мой профиль",
@@ -730,6 +733,7 @@ const kk: Dict = {
   pinLinkCta: "Кодты енгізу",
   screenLaptop: "Ноутбуктен:",
   pinNewIn: "жаңа код",
+  pinNeedsAdmin: "Ноутбук кодын көрсету үшін осы браузерде әкімші панеліне кіріңіз",
   screenEmpty: "Әзірге ешкім жоқ. Бірінші болып сканерлеңіз!",
   inRoom: "залда",
   meTitle: "Менің профилім",

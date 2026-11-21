@@ -180,6 +180,11 @@ export function ScreenPage({ t, code, go }: Props) {
             </p>
           </div>
         )}
+        {!pin && (
+          <a className="screen-pin-hint muted" href="#/admin">
+            🔒 {t.pinNeedsAdmin}
+          </a>
+        )}
         {state === "error" && <p className="alert">{t.error}</p>}
       </section>
 

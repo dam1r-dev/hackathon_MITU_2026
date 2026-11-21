@@ -24,6 +24,7 @@ def _empty() -> dict:
         "roles": {},  # member_id -> "admin" | "organizer" (absent means member)
         "tokens": {},  # member token -> member_id
         "contacts": {},  # member_id -> contact string
+        "admin_tokens": [],  # admin sessions survive a restart (docker rebuild)
         "meets": {},  # event_id -> {viewer_id: [target_id]}
         "presence": {},  # event_id -> {member_id: {"location": str, "at": iso}}
         "meetings": {},  # event_id -> {meeting_id: {id, from_id, to_id, location, at, status, created}}
@@ -37,7 +38,6 @@ class State:
         self.path = Path(path or os.getenv("STATE_FILE") or DEFAULT_PATH)
         self.lock = threading.RLock()
         self.data = _empty()
-        self.admin_tokens: set[str] = set()
         self._load()
 
     def _load(self) -> None:
