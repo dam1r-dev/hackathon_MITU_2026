@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, ApiError } from "../api";
 import { GoalBars } from "../components/RoomMap";
+import { ReportPanel } from "../components/Report";
 import { TagInput } from "../components/TagInput";
 import { Avatar, Button, GoalBadge, Segmented, Spinner } from "../components/ui";
 import type { Dict } from "../i18n";
@@ -320,7 +321,7 @@ function EventCard({ t, e, role, onChange }: { t: Dict; e: EventInfo; role: Role
       <p className="muted">
         {[e.date, e.venue].filter(Boolean).join(" · ") || "—"} · {t.attendees(e.attendee_count)}
       </p>
-      <div className="event-actions">
+      <div className="event-actions no-print">
         <a className="btn btn-primary btn-sm" href={href({ name: "admin", code: e.id })}>
           {t.manage}
         </a>
@@ -365,6 +366,7 @@ function AdminEvent({ t, role, eventId, go }: { t: Dict; role: Role; eventId: st
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [view, setView] = useState<"people" | "report">("people");
   const { copied, copy } = useCopy();
 
   const load = useCallback(async () => {
@@ -411,7 +413,7 @@ function AdminEvent({ t, role, eventId, go }: { t: Dict; role: Role; eventId: st
 
   return (
     <>
-      <Button type="button" variant="link" onClick={() => go({ name: "admin" })}>
+      <Button type="button" variant="link" className="no-print" onClick={() => go({ name: "admin" })}>
         ← {t.allEvents}
       </Button>
 
@@ -453,7 +455,21 @@ function AdminEvent({ t, role, eventId, go }: { t: Dict; role: Role; eventId: st
         </p>
       )}
 
-      <div className="admin-layout">
+      <div className="admin-tabs no-print">
+        <Segmented
+          label={t.attendeesTitle}
+          value={view}
+          onChange={setView}
+          options={[
+            { value: "people", label: t.adminTabPeople },
+            { value: "report", label: t.adminTabReport },
+          ]}
+        />
+      </div>
+
+      {view === "report" && <ReportPanel t={t} eventId={eventId} />}
+
+      <div className="admin-layout" hidden={view !== "people"}>
         <section className="admin-main">
           <div className="results-head">
             <h2>

@@ -1,15 +1,18 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ApiError } from "../api";
 import { MatchCard } from "../components/MatchCard";
+import { MeetingsStrip, MeetSheet, Toast } from "../components/Meetings";
+import { TelegramConnect } from "../components/TelegramConnect";
 import { GoalBars, RoomMap } from "../components/RoomMap";
 import { Avatar, Button, Segmented, Spinner } from "../components/ui";
 import type { Dict } from "../i18n";
 import { sentMeets, session } from "../session";
 import type { Route } from "../state";
-import { GOALS, type EventInfo, type GraphNode, type Lang, type LocationCount, type Match, type MutualOut, type PublicStats } from "../types";
+import { GOALS, type EventInfo, type GraphNode, type InMinutes, type Lang, type LocationCount, type Match, type Meeting, type MutualOut, type Profile, type PublicStats } from "../types";
 
 const POLL_MS = 8000;
 const VENUE_MS = 20000;
+const MEET_MS = 10000;
 
 type Tab = "people" | "venue" | "room";
 
@@ -33,6 +36,41 @@ export function EventPage({ t, lang, code, go }: Props) {
   const [nodes, setNodes] = useState<GraphNode[] | null>(null);
   const [stats, setStats] = useState<PublicStats | null>(null);
   const known = useRef<Set<string> | null>(null);
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [sheet, setSheet] = useState<Profile | null>(null);
+  const [sheetBusy, setSheetBusy] = useState(false);
+  const [sheetError, setSheetError] = useState<string | null>(null);
+  const [meetBusy, setMeetBusy] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const seenIncoming = useRef<Set<string> | null>(null);
+  const clearToast = useCallback(() => setToast(null), []);
+
+  const loadMeetings = useCallback(async () => {
+    try {
+      const list = await api.meetings(code);
+      const incoming = list.filter((m) => m.status === "proposed" && m.direction === "incoming");
+      if (seenIncoming.current) {
+        const fresh = incoming.find((m) => !seenIncoming.current!.has(m.id));
+        if (fresh) {
+          setToast(t.meetIncomingToast(fresh.other.name));
+          navigator.vibrate?.(100);
+        }
+      }
+      seenIncoming.current = new Set(incoming.map((m) => m.id));
+      setMeetings(list);
+    } catch {
+      /* keep the last list; the next poll retries */
+    }
+  }, [code, t]);
+
+  // Meetings: invites and the countdown, every 10 s.
+  useEffect(() => {
+    if (!me) return;
+    seenIncoming.current = null;
+    loadMeetings();
+    const id = window.setInterval(loadMeetings, MEET_MS);
+    return () => window.clearInterval(id);
+  }, [code, lang]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const apply = (ms: Match[], took: number) => {
     // Mark people who were not in the list before (not on the first load).
@@ -141,6 +179,46 @@ export function EventPage({ t, lang, code, go }: Props) {
     }
   }
 
+  async function sendInvite(location: string, inMinutes: InMinutes) {
+    if (!sheet) return;
+    setSheetBusy(true);
+    setSheetError(null);
+    try {
+      await api.proposeMeeting(code, { target_id: sheet.id, location, in_minutes: inMinutes });
+      setToast(t.meetSentToast(sheet.name));
+      setSheet(null);
+      await loadMeetings();
+    } catch (e) {
+      setSheetError(e instanceof ApiError && e.status === 409 ? t.meetErrOpen : t.error);
+    } finally {
+      setSheetBusy(false);
+    }
+  }
+
+  async function respond(m: Meeting, accept: boolean) {
+    setMeetBusy(m.id);
+    try {
+      await api.respondMeeting(code, m.id, accept);
+      await loadMeetings();
+    } catch {
+      setState("error");
+    } finally {
+      setMeetBusy(null);
+    }
+  }
+
+  async function markDone(m: Meeting) {
+    setMeetBusy(m.id);
+    try {
+      await api.meetingDone(code, m.id);
+      await loadMeetings();
+    } catch {
+      setState("error");
+    } finally {
+      setMeetBusy(null);
+    }
+  }
+
   async function feedback(targetId: string, verdict: "met" | "not_fit") {
     if (!me) return;
     setBusyId(targetId);
@@ -189,6 +267,10 @@ export function EventPage({ t, lang, code, go }: Props) {
           {t.error}
         </p>
       )}
+
+      <TelegramConnect lang={lang} />
+
+      <MeetingsStrip t={t} meetings={meetings} busyId={meetBusy} onRespond={respond} onDone={markDone} />
 
       <div className="event-tabs">
         <Segmented
@@ -317,6 +399,13 @@ export function EventPage({ t, lang, code, go }: Props) {
                 isNew={fresh.has(m.profile.id)}
                 busy={busyId !== null}
                 onFeedback={(v) => feedback(m.profile.id, v)}
+                meetNow={{
+                  open: meetings.some((x) => (x.status === "proposed" || x.status === "accepted") && x.other.id === m.profile.id),
+                  onClick: () => {
+                    setSheetError(null);
+                    setSheet(m.profile);
+                  },
+                }}
                 meet={{
                   state: mu ? "mutual" : sent.includes(m.profile.id) ? "waiting" : "idle",
                   contact: mu?.contact,
@@ -327,6 +416,19 @@ export function EventPage({ t, lang, code, go }: Props) {
           })}
         </section>
       )}
+
+      {sheet && (
+        <MeetSheet
+          t={t}
+          target={sheet}
+          locations={event?.locations.length ? event.locations : [event?.venue || "—"]}
+          busy={sheetBusy}
+          error={sheetError}
+          onSend={sendInvite}
+          onClose={() => setSheet(null)}
+        />
+      )}
+      <Toast text={toast} onDone={clearToast} />
     </div>
   );
 }

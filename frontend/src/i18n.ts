@@ -172,6 +172,60 @@ export type Dict = {
   showOnProjector: string;
   goals: Record<Goal, string>;
   goalHints: Record<Goal, string>;
+  // meet now
+  meetNow: string;
+  meetSheetTitle: (name: string) => string;
+  meetWhere: string;
+  meetWhen: string;
+  meetWhenNow: string;
+  meetInMin: (n: number) => string;
+  meetSend: string;
+  meetSentToast: (name: string) => string;
+  meetInvited: string;
+  meetClose: string;
+  meetErrOpen: string;
+  meetingsTitle: string;
+  meetWants: string;
+  meetWaitingReply: string;
+  meetAccept: string;
+  meetDecline: string;
+  meetWeMet: string;
+  meetStartsIn: (time: string) => string;
+  meetHappening: string;
+  meetDoneCount: (n: number) => string;
+  meetIncomingToast: (name: string) => string;
+  // projector live
+  liveMatches: string;
+  liveMeetings: string;
+  legendMutual: string;
+  legendMeeting: string;
+  // organizer report
+  adminTabPeople: string;
+  adminTabReport: string;
+  repTitle: string;
+  repKpiAttendees: string;
+  repKpiMatched: string;
+  repKpiMatches: string;
+  repKpiMeetings: string;
+  repMeetingsSub: (accepted: number, proposed: number) => string;
+  repJoined: string;
+  repJoinedEmpty: string;
+  repGoals: string;
+  repInsights: string;
+  repNoInsights: string;
+  repLocations: string;
+  repNowWord: string;
+  repMeetingsWord: string;
+  repConnectors: string;
+  repConnectorsEmpty: string;
+  repMutualN: (n: number) => string;
+  repPrint: string;
+  repPrinted: (date: string) => string;
+  repJoinedPeak: (n: number) => string;
+  insightScarce: (plenty: string, pc: number, scarce: string, sc: number, who: string) => string;
+  insightTop: (name: string, meetings: number, now: number) => string;
+  insightLow: (pct: number) => string;
+  inviteWho: Record<Goal, string>;
 };
 
 const en: Dict = {
@@ -351,6 +405,58 @@ const en: Dict = {
   venueLocationsHint: "One place per line, up to 12. Guests tell where they are.",
   saved: "Saved",
   showOnProjector: "Now in the venue",
+  // meet now
+  meetNow: "Meet now",
+  meetSheetTitle: (name) => `Meet ${name}`,
+  meetWhere: "Where?",
+  meetWhen: "When?",
+  meetWhenNow: "Now",
+  meetInMin: (n) => `${n} min`,
+  meetSend: "Send invite",
+  meetSentToast: (name) => `Invite sent to ${name}`,
+  meetInvited: "Meeting planned",
+  meetClose: "Close",
+  meetErrOpen: "You already have an open meeting with this person.",
+  meetingsTitle: "Meetings",
+  meetWants: "wants to meet you",
+  meetWaitingReply: "Waiting for a reply",
+  meetAccept: "Accept",
+  meetDecline: "Decline",
+  meetWeMet: "We met",
+  meetStartsIn: (time) => `in ${time}`,
+  meetHappening: "It's time!",
+  meetDoneCount: (n) => `Done: ${n}`,
+  meetIncomingToast: (name) => `${name} invites you to meet`,
+  liveMatches: "Matches",
+  liveMeetings: "Meetings",
+  legendMutual: "Mutual interest",
+  legendMeeting: "Meeting",
+  adminTabPeople: "People",
+  adminTabReport: "Report",
+  repTitle: "Networking report",
+  repKpiAttendees: "Attendees",
+  repKpiMatched: "Found a match",
+  repKpiMatches: "Matches",
+  repKpiMeetings: "Meetings held",
+  repMeetingsSub: (a, p) => `${a} planned · ${p} invited`,
+  repJoined: "Joined over time",
+  repJoinedEmpty: "No join times recorded yet.",
+  repGoals: "Goals: who is looking, who offers",
+  repInsights: "Insights",
+  repNoInsights: "Nothing to flag yet. The room looks balanced.",
+  repLocations: "Where people meet",
+  repNowWord: "here now",
+  repMeetingsWord: "meetings",
+  repConnectors: "Top connectors",
+  repConnectorsEmpty: "No mutual matches yet.",
+  repMutualN: (n) => `${n} mutual`,
+  repPrint: "Print / PDF",
+  repPrinted: (date) => `Generated ${date}`,
+  repJoinedPeak: (n) => `Peak: ${n} per 10 min`,
+  insightScarce: (plenty, pc, scarce, sc, who) => `${pc} people are "${plenty}", but only ${sc} are "${scarce}". Invite ${who} to the next meetup.`,
+  insightTop: (name, m, now) => `Busiest spot: ${name} (${m} meetings, ${now} here now).`,
+  insightLow: (pct) => `Only ${pct}% found a match. Encourage "Meet now" and show matches on the projector.`,
+  inviteWho: { find_job: "job seekers", hire: "HR and hiring managers", find_mentor: "people looking for a mentor", be_mentor: "mentors", find_cofounder: "co-founder seekers", exchange_experience: "more peers" },
 };
 
 const ru: Dict = {
@@ -535,6 +641,58 @@ const ru: Dict = {
   venueLocationsHint: "По одному месту в строке, до 12. Гости отмечают, где они.",
   saved: "Сохранено",
   showOnProjector: "Сейчас на площадке",
+  // meet now
+  meetNow: "Встретиться сейчас",
+  meetSheetTitle: (name) => `Встреча: ${name}`,
+  meetWhere: "Где?",
+  meetWhen: "Когда?",
+  meetWhenNow: "Сейчас",
+  meetInMin: (n) => `${n} мин`,
+  meetSend: "Отправить приглашение",
+  meetSentToast: (name) => `Приглашение отправлено: ${name}`,
+  meetInvited: "Встреча в планах",
+  meetClose: "Закрыть",
+  meetErrOpen: "С этим человеком уже есть открытая встреча.",
+  meetingsTitle: "Встречи",
+  meetWants: "хочет встретиться",
+  meetWaitingReply: "Ждём ответа",
+  meetAccept: "Принять",
+  meetDecline: "Отклонить",
+  meetWeMet: "Встретились",
+  meetStartsIn: (time) => `через ${time}`,
+  meetHappening: "Пора!",
+  meetDoneCount: (n) => `Состоялось: ${n}`,
+  meetIncomingToast: (name) => `${name} зовёт вас на встречу`,
+  liveMatches: "Совпадений",
+  liveMeetings: "Встреч",
+  legendMutual: "Взаимный интерес",
+  legendMeeting: "Встреча",
+  adminTabPeople: "Участники",
+  adminTabReport: "Отчёт",
+  repTitle: "Отчёт по нетворкингу",
+  repKpiAttendees: "Участников",
+  repKpiMatched: "Нашли совпадение",
+  repKpiMatches: "Совпадений",
+  repKpiMeetings: "Встреч состоялось",
+  repMeetingsSub: (a, p) => `${a} назначено · ${p} приглашений`,
+  repJoined: "Приход участников",
+  repJoinedEmpty: "Время прихода пока не записано.",
+  repGoals: "Цели: кто ищет, кто предлагает",
+  repInsights: "Выводы",
+  repNoInsights: "Пока нечего отметить. Зал выглядит сбалансированным.",
+  repLocations: "Где общаются",
+  repNowWord: "сейчас здесь",
+  repMeetingsWord: "встреч",
+  repConnectors: "Главные коннекторы",
+  repConnectorsEmpty: "Взаимных совпадений пока нет.",
+  repMutualN: (n) => `${n} взаимных`,
+  repPrint: "Печать / PDF",
+  repPrinted: (date) => `Сформировано ${date}`,
+  repJoinedPeak: (n) => `Пик: ${n} за 10 мин`,
+  insightScarce: (plenty, pc, scarce, sc, who) => `${pc} с целью «${plenty}», а «${scarce}» только ${sc}. Пригласите ${who} на следующий митап.`,
+  insightTop: (name, m, now) => `Самое людное место: ${name} (встреч: ${m}, сейчас здесь: ${now}).`,
+  insightLow: (pct) => `Совпадение нашли только ${pct}%. Предлагайте «Встретиться сейчас» и показывайте совпадения на проекторе.`,
+  inviteWho: { find_job: "тех, кто ищет работу", hire: "HR и рекрутеров", find_mentor: "тех, кто ищет ментора", be_mentor: "менторов", find_cofounder: "тех, кто ищет сооснователя", exchange_experience: "больше коллег" },
 };
 
 const kk: Dict = {
@@ -714,6 +872,58 @@ const kk: Dict = {
   venueLocationsHint: "Әр жолға бір орын, 12-ге дейін. Қонақтар қайда екенін белгілейді.",
   saved: "Сақталды",
   showOnProjector: "Қазір алаңда",
+  // meet now
+  meetNow: "Қазір кездесу",
+  meetSheetTitle: (name) => `Кездесу: ${name}`,
+  meetWhere: "Қайда?",
+  meetWhen: "Қашан?",
+  meetWhenNow: "Қазір",
+  meetInMin: (n) => `${n} мин`,
+  meetSend: "Шақыру жіберу",
+  meetSentToast: (name) => `Шақыру жіберілді: ${name}`,
+  meetInvited: "Кездесу жоспарда",
+  meetClose: "Жабу",
+  meetErrOpen: "Бұл адаммен ашық кездесу бар.",
+  meetingsTitle: "Кездесулер",
+  meetWants: "кездескісі келеді",
+  meetWaitingReply: "Жауап күтілуде",
+  meetAccept: "Қабылдау",
+  meetDecline: "Бас тарту",
+  meetWeMet: "Кездестік",
+  meetStartsIn: (time) => `${time} кейін`,
+  meetHappening: "Уақыты келді!",
+  meetDoneCount: (n) => `Өтті: ${n}`,
+  meetIncomingToast: (name) => `${name} сізді кездесуге шақырады`,
+  liveMatches: "Сәйкестік",
+  liveMeetings: "Кездесу",
+  legendMutual: "Өзара қызығушылық",
+  legendMeeting: "Кездесу",
+  adminTabPeople: "Қатысушылар",
+  adminTabReport: "Есеп",
+  repTitle: "Нетворкинг есебі",
+  repKpiAttendees: "Қатысушы",
+  repKpiMatched: "Сәйкестік тапты",
+  repKpiMatches: "Сәйкестік",
+  repKpiMeetings: "Өткен кездесу",
+  repMeetingsSub: (a, p) => `${a} белгіленді · ${p} шақыру`,
+  repJoined: "Қатысушылардың келуі",
+  repJoinedEmpty: "Келу уақыты әзірге жазылмаған.",
+  repGoals: "Мақсаттар: кім іздейді, кім ұсынады",
+  repInsights: "Қорытындылар",
+  repNoInsights: "Әзірге атап өтетін ештеңе жоқ. Зал тепе-тең.",
+  repLocations: "Қай жерде сөйлесті",
+  repNowWord: "қазір осында",
+  repMeetingsWord: "кездесу",
+  repConnectors: "Басты байланыстырушылар",
+  repConnectorsEmpty: "Өзара сәйкестік әзірге жоқ.",
+  repMutualN: (n) => `${n} өзара`,
+  repPrint: "Басып шығару / PDF",
+  repPrinted: (date) => `Жасалған күні: ${date}`,
+  repJoinedPeak: (n) => `Шың: 10 минутта ${n}`,
+  insightScarce: (plenty, pc, scarce, sc, who) => `«${plenty}» мақсаты бар ${pc} адам, ал «${scarce}» тек ${sc}. Келесі митапқа ${who} шақырыңыз.`,
+  insightTop: (name, m, now) => `Ең көп қауымдасатын жер: ${name} (кездесу: ${m}, қазір осында: ${now}).`,
+  insightLow: (pct) => `Сәйкестікті тек ${pct}% тапты. «Қазір кездесу» батырмасын ұсынып, сәйкестіктерді проекторда көрсетіңіз.`,
+  inviteWho: { find_job: "жұмыс іздейтіндерді", hire: "HR мен рекрутерлерді", find_mentor: "ментор іздейтіндерді", be_mentor: "тәлімгерлерді", find_cofounder: "тең құрылтайшы іздейтіндерді", exchange_experience: "көбірек әріптестерді" },
 };
 
 export const dict: Record<Lang, Dict> = { en, ru, kk };

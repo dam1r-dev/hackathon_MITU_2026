@@ -180,6 +180,12 @@ def _create_member(pin: ProfileIn, contact: str | None, with_token: bool) -> tup
     return profile, token
 
 
+def _drop_meetings(event_id: str, member_id: str) -> None:
+    per_event = ctx.state.data["meetings"].get(event_id, {})
+    for mid in [k for k, m in per_event.items() if member_id in (m["from_id"], m["to_id"])]:
+        del per_event[mid]
+
+
 def _attendee(p: Profile) -> Attendee:
     return Attendee(profile=p, system_role=ctx.state.role(p.id))
 
@@ -326,6 +332,7 @@ def join_event(code: str, req: JoinRequest, a: Auth = Depends(auth)) -> JoinResp
         lst = st.data["attendees"].setdefault(e["id"], [])
         if member.id not in lst:
             lst.append(member.id)
+            st.data["joined_at"].setdefault(e["id"], {})[member.id] = st.now()
         st.save()
         allowed = set(lst)
     took_ms, matches = idx.recommend(_as_in(member), req.lang, member.id, allowed_ids=allowed)
@@ -408,10 +415,15 @@ def want_to_meet(code: str, req: MeetRequest, a: Auth = Depends(auth)) -> MeetRe
     with st.lock:
         meets = st.data["meets"].setdefault(e["id"], {})
         mine = meets.setdefault(me_id, [])
-        if req.target_id not in mine:
+        is_new = req.target_id not in mine
+        if is_new:
             mine.append(req.target_id)
         mutual = me_id in meets.get(req.target_id, [])
         st.save()
+    if mutual and is_new:
+        from . import telegram  # lazy: telegram imports this module
+
+        telegram.notify_mutual(me_id, req.target_id)
     return MeetResponse(mutual=mutual, contact=st.data["contacts"].get(req.target_id) if mutual else None)
 
 
@@ -497,6 +509,8 @@ def delete_event(event_id: str, a: Auth = Depends(auth)) -> Response:
         st.data["attendees"].pop(event_id, None)
         st.data["meets"].pop(event_id, None)
         st.data["presence"].pop(event_id, None)
+        st.data["meetings"].pop(event_id, None)
+        st.data["joined_at"].pop(event_id, None)
         st.save()
     return Response(status_code=204)
 
@@ -526,6 +540,7 @@ def add_attendee(event_id: str, req: AttendeeIn, a: Auth = Depends(auth)) -> Att
         lst = st.data["attendees"].setdefault(e["id"], [])
         if member.id not in lst:
             lst.append(member.id)
+            st.data["joined_at"].setdefault(e["id"], {})[member.id] = st.now()
         st.save()
     return _attendee(member)
 
@@ -544,15 +559,12 @@ def remove_attendee(event_id: str, member_id: str, a: Auth = Depends(auth)) -> R
                 viewer_targets.remove(member_id)
         st.data["meets"].get(e["id"], {}).pop(member_id, None)
         st.data["presence"].get(e["id"], {}).pop(member_id, None)
+        _drop_meetings(e["id"], member_id)
         st.save()
     return Response(status_code=204)
 
 
-@router.get("/events/{event_id}/stats", response_model=Stats)
-def event_stats(event_id: str, a: Auth = Depends(auth)) -> Stats:
-    e = _event_by_id(event_id)
-    need_manager(a, e)
-    total, counts = _goal_counts(e["id"])
+def scarce_hints(counts: dict[str, int]) -> list[Hint]:
     hints: list[Hint] = []
     for first, second in (("find_job", "hire"), ("find_mentor", "be_mentor")):
         for scarce, plenty in ((first, second), (second, first)):
@@ -566,6 +578,15 @@ def event_stats(event_id: str, a: Auth = Depends(auth)) -> Stats:
                         plenty_count=counts[plenty],
                     )
                 )
+    return hints
+
+
+@router.get("/events/{event_id}/stats", response_model=Stats)
+def event_stats(event_id: str, a: Auth = Depends(auth)) -> Stats:
+    e = _event_by_id(event_id)
+    need_manager(a, e)
+    total, counts = _goal_counts(e["id"])
+    hints = scarce_hints(counts)
     return Stats(attendees=total, by_goal=[GoalCount(goal=g, count=c) for g, c in counts.items()], hints=hints)
 
 
@@ -617,6 +638,10 @@ def delete_member(member_id: str, a: Auth = Depends(auth)) -> Response:
             if member_id in event["organizer_ids"]:
                 event["organizer_ids"].remove(member_id)
         for per_event in st.data["presence"].values():
+            per_event.pop(member_id, None)
+        for eid in list(st.data["meetings"]):
+            _drop_meetings(eid, member_id)
+        for per_event in st.data["joined_at"].values():
             per_event.pop(member_id, None)
         for per_event in st.data["meets"].values():
             per_event.pop(member_id, None)

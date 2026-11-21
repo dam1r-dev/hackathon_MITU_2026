@@ -149,3 +149,45 @@ export interface EventStats {
   by_goal: { goal: Goal; count: number }[];
   hints: { code: "scarce_supply"; scarce: Goal; plenty: Goal; scarce_count: number; plenty_count: number }[];
 }
+
+// Meet now, projector live feed, organizer report (docs/CONTRACT.md).
+export type MeetingStatus = "proposed" | "accepted" | "declined" | "done";
+export type InMinutes = 0 | 5 | 10 | 15;
+
+export interface Meeting {
+  id: string;
+  direction: "incoming" | "outgoing";
+  other: Profile;
+  location: string;
+  /** ISO time of the meeting */
+  at: string;
+  status: MeetingStatus;
+}
+
+export interface LiveEdge {
+  from: string;
+  to: string;
+  kind: "mutual" | "meeting";
+  at: string | null;
+}
+
+export interface LiveFeed {
+  edges: LiveEdge[];
+  counters: { attendees: number; mutual_pairs: number; meetings_accepted: number; meetings_done: number };
+}
+
+export interface EventReport {
+  attendees: number;
+  matched_share: number;
+  mutual_pairs: number;
+  meetings: { proposed: number; accepted: number; done: number };
+  timeline: { t: string; joined: number }[];
+  by_goal: { goal: Goal; count: number }[];
+  insights: (
+    | { code: "scarce_supply"; params: { scarce: Goal; plenty: Goal; scarce_count: number; plenty_count: number } }
+    | { code: "top_location"; params: { name: string; meetings: number; now: number } }
+    | { code: "low_matching"; params: { matched_share: number } }
+  )[];
+  locations: { name: string; now: number; meetings: number }[];
+  top_connectors: { id: string; name: string; role: string; mutual: number }[];
+}

@@ -11,13 +11,15 @@ type Props = {
   onFeedback: (verdict: "met" | "not_fit") => void;
   /** Event mode: "Want to meet" with mutual reveal of the contact. */
   meet?: { state: "idle" | "waiting" | "mutual"; contact?: string | null; onClick: () => void };
+  /** Event mode: turn the match into a real meeting. `open` is set while a proposed/accepted meeting exists. */
+  meetNow?: { open: boolean; onClick: () => void };
   isNew?: boolean;
 };
 
 /** Whole minutes since an ISO time (never negative). */
 export const minutesAgo = (iso: string) => Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 60000));
 
-export function MatchCard({ t, m, rank, busy, onFeedback, meet, isNew }: Props) {
+export function MatchCard({ t, m, rank, busy, onFeedback, meet, meetNow, isNew }: Props) {
   const [copied, setCopied] = useState(false);
   const p = m.profile;
 
@@ -86,11 +88,18 @@ export function MatchCard({ t, m, rank, busy, onFeedback, meet, isNew }: Props) 
 
       {meet && (
         <div className="meet" data-state={meet.state} aria-live="polite">
-          {meet.state === "idle" && (
-            <Button type="button" disabled={busy} onClick={meet.onClick}>
-              ♥ {t.wantMeet}
-            </Button>
-          )}
+          <div className="meet-row">
+            {meet.state === "idle" && (
+              <Button type="button" variant={meetNow ? "ghost" : "primary"} disabled={busy} onClick={meet.onClick}>
+                ♥ {t.wantMeet}
+              </Button>
+            )}
+            {meetNow && (
+              <Button type="button" disabled={busy || meetNow.open} onClick={meetNow.onClick}>
+                {meetNow.open ? `✓ ${t.meetInvited}` : `📍 ${t.meetNow}`}
+              </Button>
+            )}
+          </div>
           {meet.state === "waiting" && <p className="meet-note">⏳ {t.meetWaiting}</p>}
           {meet.state === "mutual" && (
             <p className="meet-note">

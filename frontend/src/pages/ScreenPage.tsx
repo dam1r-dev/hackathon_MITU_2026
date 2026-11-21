@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, ApiError } from "../api";
-import { GoalBars, RoomMap } from "../components/RoomMap";
+import { LiveCounter } from "../components/LiveCounter";
+import { edgeKey, GoalBars, RoomMap } from "../components/RoomMap";
 import { Button } from "../components/ui";
 import type { Dict } from "../i18n";
 import { storageSet, type Route } from "../state";
-import { GOALS, type EventInfo, type GraphNode, type LocationCount } from "../types";
+import { GOALS, type EventInfo, type GraphNode, type LiveFeed, type LocationCount } from "../types";
 
 const POLL_MS = 4000;
 
@@ -18,6 +19,51 @@ export function ScreenPage({ t, code, go }: Props) {
   const [places, setPlaces] = useState<LocationCount[]>([]);
   const [codeInput, setCodeInput] = useState(code);
   const [pin, setPin] = useState<{ pin: string; left: number } | null>(null);
+  const [live, setLive] = useState<LiveFeed | null>(null);
+  const [freshEdges, setFreshEdges] = useState<Set<string>>(new Set());
+  const [pulseIds, setPulseIds] = useState<Set<string>>(new Set());
+  const seenEdges = useRef<Set<string> | null>(null);
+
+  // Live feed: links between people (mutual interest, meetings) and counters, every 4 s.
+  useEffect(() => {
+    let alive = true;
+    let timer: number | undefined;
+    let clear: number | undefined;
+    seenEdges.current = null;
+    setLive(null);
+    setFreshEdges(new Set());
+    setPulseIds(new Set());
+    const load = async () => {
+      try {
+        const feed = await api.eventLive(code);
+        if (!alive) return;
+        const keys = feed.edges.map(edgeKey);
+        if (seenEdges.current) {
+          const added = feed.edges.filter((e) => !seenEdges.current!.has(edgeKey(e)));
+          if (added.length) {
+            setFreshEdges(new Set(added.map(edgeKey)));
+            setPulseIds(new Set(added.flatMap((e) => [e.from, e.to])));
+            window.clearTimeout(clear);
+            clear = window.setTimeout(() => {
+              setFreshEdges(new Set());
+              setPulseIds(new Set());
+            }, 3600);
+          }
+        }
+        seenEdges.current = new Set(keys);
+        setLive(feed);
+      } catch {
+        /* keep what is on screen; the next poll retries */
+      }
+      if (alive) timer = window.setTimeout(load, POLL_MS);
+    };
+    load();
+    return () => {
+      alive = false;
+      window.clearTimeout(timer);
+      window.clearTimeout(clear);
+    };
+  }, [code]);
 
   // Rotating join PIN, shown only to admin / organizer (a 401/403 hides the block).
   useEffect(() => {
@@ -134,23 +180,37 @@ export function ScreenPage({ t, code, go }: Props) {
             </p>
           </div>
         )}
-        <div className="screen-counter" aria-live="polite">
-          <span className="live-dot" data-error={state === "error"} />
-          <strong className="mono">{nodes?.length ?? "–"}</strong>
-          <span>{t.inRoom}</span>
-        </div>
         {state === "error" && <p className="alert">{t.error}</p>}
       </section>
 
       <section className="screen-map">
-        {nodes === null ? (
-          <div className="map skeleton" />
-        ) : nodes.length === 0 ? (
-          <div className="map state-box">{t.screenEmpty}</div>
-        ) : (
-          <RoomMap nodes={nodes} meLabel={t.you} label={t.mapTitle} labelAll />
-        )}
-        <div className="card">
+        <div className="screen-stats">
+          <LiveCounter label={t.inRoom} value={live?.counters.attendees ?? nodes?.length ?? null} icon={<span className="live-dot" data-error={state === "error"} />} />
+          <LiveCounter label={t.liveMatches} value={live ? live.counters.mutual_pairs : null} tone="mutual" icon="♥" />
+          <LiveCounter label={t.liveMeetings} value={live ? live.counters.meetings_accepted + live.counters.meetings_done : null} tone="meeting" icon="🤝" />
+        </div>
+        <div className="map-wrap">
+          {nodes === null ? (
+            <div className="map skeleton" />
+          ) : nodes.length === 0 ? (
+            <div className="map state-box">{t.screenEmpty}</div>
+          ) : (
+            <RoomMap
+              nodes={nodes}
+              meLabel={t.you}
+              label={t.mapTitle}
+              labelAll
+              liveEdges={live?.edges}
+              freshEdges={freshEdges}
+              pulseIds={pulseIds}
+            />
+          )}
+          <div className="map-legend" aria-hidden>
+            <span data-kind="mutual">{t.legendMutual}</span>
+            <span data-kind="meeting">{t.legendMeeting}</span>
+          </div>
+        </div>
+        <div className="card screen-foot">
           <GoalBars counts={counts} label={t.byGoal} />
           {places.some((p) => p.count > 0) && (
             <ul className="screen-venue" aria-label={t.showOnProjector}>

@@ -2,6 +2,10 @@ import { adminSession, session } from "./session";
 import type {
   Attendee,
   EventInfo,
+  EventReport,
+  InMinutes,
+  LiveFeed,
+  Meeting,
   EventStats,
   LocationCount,
   LocationState,
@@ -84,6 +88,7 @@ export const api = {
   eventLocations: (code: string) => get<LocationCount[]>(`${ev(code)}/locations`),
   event: (code: string) => get<EventInfo>(ev(code)),
   eventQrUrl: (code: string) => `${ev(code)}/qr.svg`,
+  eventLive: (code: string) => get<LiveFeed>(`${ev(code)}/live`),
   eventGraph: (code: string) => get<GraphResponse>(`${ev(code)}/graph`),
   join: (code: string, body: { profile?: ProfileIn; contact?: string; lang: Lang }) => post<JoinResponse>(`${ev(code)}/join`, body),
 
@@ -93,6 +98,11 @@ export const api = {
   mutual: (code: string) => get<MutualOut[]>(`${ev(code)}/mutual`),
   me: () => get<MeOut>("/api/me"),
   updateMe: (profile: ProfileIn, contact?: string | null) => send<MeOut>("PATCH", "/api/me", { profile, contact: contact ?? null }),
+  meetings: (code: string) => get<Meeting[]>(`${ev(code)}/meetings`),
+  proposeMeeting: (code: string, body: { target_id: string; location: string; in_minutes: InMinutes }) =>
+    post<Meeting>(`${ev(code)}/meetings`, body),
+  respondMeeting: (code: string, id: string, accept: boolean) => post<Meeting>(`${ev(code)}/meetings/${id}/respond`, { accept }),
+  meetingDone: (code: string, id: string) => post<Meeting>(`${ev(code)}/meetings/${id}/done`, {}),
   setLocation: (code: string, location: string | null) => post<LocationState>(`${ev(code)}/location`, { location }),
 
   // Admin / organizer (X-Admin-Token or an organizer's X-Member-Token)
@@ -107,6 +117,7 @@ export const api = {
   attendees: (id: string) => get<Attendee[]>(`/api/events/${id}/attendees`),
   addAttendee: (id: string, body: { member_id: string } | { profile: ProfileIn }) => post<Attendee>(`/api/events/${id}/attendees`, body),
   removeAttendee: (id: string, memberId: string) => send<void>("DELETE", `/api/events/${id}/attendees/${memberId}`),
+  report: (id: string) => get<EventReport>(`/api/events/${id}/report`),
   stats: (id: string) => get<EventStats>(`/api/events/${id}/stats`),
   members: () => get<MemberOut[]>("/api/members"),
   setRole: (memberId: string, role: SystemRole) => send<Attendee>("PATCH", `/api/members/${memberId}/role`, { role }),

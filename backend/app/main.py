@@ -8,6 +8,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from .api_events import router as events_router
+from . import telegram
+from .api_meetings import router as meetings_router
 from .ctx import ctx
 from .events_models import DEFAULT_LOCATIONS
 from .embeddings import Embedder
@@ -89,12 +91,15 @@ async def lifespan(_: FastAPI):
         if not e.get("locations"):
             e["locations"] = list(DEFAULT_LOCATIONS)
     _seed_events([p.id for p in dataset])
+    telegram.start()
     yield
 
 
 app = FastAPI(title="Meetup Matchmaker", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 app.include_router(events_router)
+app.include_router(meetings_router)
+app.include_router(telegram.router)
 
 
 def _event_ids(code: str | None) -> set[str] | None:

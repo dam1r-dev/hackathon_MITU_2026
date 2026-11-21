@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { Goal, GraphNode } from "../types";
+import type { Goal, GraphNode, LiveEdge } from "../types";
 
 const PAD = 36;
 const PHONE = "(max-width: 640px)";
@@ -49,15 +49,32 @@ type Props = {
   onSelect?: (id: string | null) => void;
   /** Projector mode: show every node's label (names are initials there). */
   labelAll?: boolean;
+  /** Projector: live links between people (mutual interest, meetings). */
+  liveEdges?: LiveEdge[];
+  /** Keys (see edgeKey) of links that just appeared: they animate in. */
+  freshEdges?: Set<string>;
+  /** Node ids that pulse (ends of a new link). */
+  pulseIds?: Set<string>;
 };
+
+export const edgeKey = (e: Pick<LiveEdge, "from" | "to" | "kind">) => `${[e.from, e.to].sort().join("|")}|${e.kind}`;
 
 const firstName = (name: string) => name.split(/\s+/)[0] ?? name;
 
-export function RoomMap({ nodes, highlights = [], meId, meLabel, label, filter = "all", selected, onSelect, labelAll }: Props) {
+export function RoomMap({ nodes, highlights = [], meId, meLabel, label, filter = "all", selected, onSelect, labelAll, liveEdges = [], freshEdges, pulseIds }: Props) {
   const { W, H } = useCanvas();
   const fresh = useFresh(nodes);
-  const px = (n: GraphNode) => PAD + n.x * (W - PAD * 2);
-  const py = (n: GraphNode) => PAD + n.y * (H - PAD * 2);
+  // Coordinates come from the layout of everyone in the system; a small live room would sit in
+  // one corner of it. Stretch the nodes we actually show to fill the canvas.
+  const bounds = useMemo(() => {
+    const xs = nodes.map((n) => n.x);
+    const ys = nodes.map((n) => n.y);
+    const b = { x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys) };
+    return nodes.length ? b : { x0: 0, x1: 1, y0: 0, y1: 1 };
+  }, [nodes]);
+  const fit = (v: number, lo: number, hi: number) => (hi - lo < 1e-6 ? 0.5 : 0.06 + (0.88 * (v - lo)) / (hi - lo));
+  const px = (n: GraphNode) => PAD + fit(n.x, bounds.x0, bounds.x1) * (W - PAD * 2);
+  const py = (n: GraphNode) => PAD + fit(n.y, bounds.y0, bounds.y1) * (H - PAD * 2);
 
   const byId = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
   const top = highlights.filter((h) => byId.has(h.id));
@@ -94,6 +111,28 @@ export function RoomMap({ nodes, highlights = [], meId, meLabel, label, filter =
           );
         })}
 
+      {liveEdges.map((e) => {
+        const a = byId.get(e.from);
+        const b = byId.get(e.to);
+        if (!a || !b) return null;
+        const [x1, y1, x2, y2] = [px(a), py(a), px(b), py(b)];
+        // Meetings bow slightly so a pair that is both mutual and meeting shows two lines.
+        const bend = e.kind === "meeting" ? 0.12 : 0;
+        const cx = (x1 + x2) / 2 - (y2 - y1) * bend;
+        const cy = (y1 + y2) / 2 + (x2 - x1) * bend;
+        const key = edgeKey(e);
+        return (
+          <path
+            key={key}
+            className="live-edge"
+            data-kind={e.kind}
+            data-fresh={freshEdges?.has(key) || undefined}
+            d={`M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`}
+            pathLength={1}
+          />
+        );
+      })}
+
       {ordered.map((n) => {
         const hi = topIds.has(n.id);
         const isMe = n.id === me?.id;
@@ -119,6 +158,7 @@ export function RoomMap({ nodes, highlights = [], meId, meLabel, label, filter =
             onKeyDown={(e) => onSelect && (e.key === "Enter" || e.key === " ") && onSelect(n.id)}
           >
             {r > 0 && onSelect && <circle className="hit" r={Math.max(r, 12)} />}
+            {r > 0 && pulseIds?.has(n.id) && <circle className="node-ring" r={r} />}
             {r > 0 && <circle className="dotc" r={r} />}
             {showLabel && (
               <text className="map-label" y={-r - 7} textAnchor="middle">

@@ -26,6 +26,8 @@ def _empty() -> dict:
         "contacts": {},  # member_id -> contact string
         "meets": {},  # event_id -> {viewer_id: [target_id]}
         "presence": {},  # event_id -> {member_id: {"location": str, "at": iso}}
+        "meetings": {},  # event_id -> {meeting_id: {id, from_id, to_id, location, at, status, created}}
+        "joined_at": {},  # event_id -> {member_id: iso}, missing for attendees from before this was recorded
         "feedback": {},  # viewer_id -> {"met": [...], "not_fit": [...]}
     }
 
