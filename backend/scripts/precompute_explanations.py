@@ -174,8 +174,9 @@ def main() -> None:
             v = futures[fut]
             try:
                 res = fut.result()
-            except anthropic.AuthenticationError:
-                sys.exit("ANTHROPIC_API_KEY is missing or invalid (put it in .env)")
+            except (anthropic.AuthenticationError, TypeError):
+                # TypeError: the SDK found no key at all; AuthenticationError: the key is wrong.
+                sys.exit("ANTHROPIC_API_KEY is missing or invalid: add ANTHROPIC_API_KEY=... to .env in the repo root")
             except (anthropic.APIError, RuntimeError, ValueError, KeyError) as exc:
                 failed += 1
                 print(f"[{n}/{len(todo)}] {v.id} failed: {exc}", file=sys.stderr)
