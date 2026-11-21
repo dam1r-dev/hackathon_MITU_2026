@@ -210,12 +210,14 @@ export function ProfileForm({ t, value, onChange, onSubmit, loading, children, s
         </div>
       )}
 
-      <div className="field">
-        <label className="field-label" htmlFor="f-stack">
-          {hire ? t.stackHire : t.stack}
-        </label>
-        <TagInput id="f-stack" value={value.stack} onChange={(v) => set("stack", v)} suggestions={STACK_SUGGESTIONS} placeholder={t.tagHint} />
-      </div>
+      {!hire && (
+        <div className="field">
+          <label className="field-label" htmlFor="f-stack">
+            {t.stack}
+          </label>
+          <TagInput id="f-stack" value={value.stack} onChange={(v) => set("stack", v)} suggestions={STACK_SUGGESTIONS} placeholder={t.tagHint} />
+        </div>
+      )}
 
       <div className="field">
         <label className="field-label" htmlFor="f-exp">

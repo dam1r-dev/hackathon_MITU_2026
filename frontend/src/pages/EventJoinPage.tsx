@@ -18,6 +18,7 @@ export function EventJoinPage({ t, lang, code, go }: Props) {
   const [load, setLoad] = useState<Load>({ kind: "loading" });
   const [form, setForm] = useState<ProfileIn>({ ...EMPTY_PROFILE, lang });
   const [contact, setContact] = useState("");
+  const [contactMissing, setContactMissing] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +56,7 @@ export function EventJoinPage({ t, lang, code, go }: Props) {
     try {
       const res = await api.join(code, {
         lang,
-        ...(withProfile ? { profile: { ...form, lang }, contact: contact.trim() || undefined } : {}),
+        ...(withProfile ? { profile: { ...form, lang }, contact: /^[A-Za-z0-9_]{4,}$/.test(contact.trim()) ? `@${contact.trim()}` : contact.trim() } : {}),
       });
       session.set({ token: res.token || session.get()?.token || "", memberId: res.member_id, lastEvent: res.event.code });
       storageSet("lastEvent", res.event.code);
@@ -118,6 +119,11 @@ export function EventJoinPage({ t, lang, code, go }: Props) {
           value={form}
           onChange={setForm}
           onSubmit={() => {
+            if (!contact.trim()) {
+              setContactMissing(true);
+              document.getElementById("f-contact")?.focus();
+              return;
+            }
             session.clear(); // a new profile is a new member
             join(true);
           }}
@@ -132,11 +138,20 @@ export function EventJoinPage({ t, lang, code, go }: Props) {
               id="f-contact"
               maxLength={80}
               autoComplete="off"
-              placeholder="@telegram"
+              placeholder="@username"
+              required
+              aria-invalid={contactMissing && !contact.trim()}
               value={contact}
-              onChange={(e) => setContact(e.target.value)}
+              onChange={(e) => {
+                setContact(e.target.value);
+                setContactMissing(false);
+              }}
             />
-            <span className="field-hint">{t.contactHint}</span>
+            {contactMissing && !contact.trim() ? (
+              <span className="field-error">{t.required}</span>
+            ) : (
+              <span className="field-hint">{t.contactHint}</span>
+            )}
           </div>
         </ProfileForm>
       )}
